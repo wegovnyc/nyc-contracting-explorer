@@ -1,3 +1,8 @@
+---
+layout: default
+title: Claude Desktop Setup
+---
+
 # Claude Desktop Setup Guide
 
 Connect Claude Desktop to the NYC Contracting Explorer for AI-powered procurement analysis.
@@ -7,11 +12,13 @@ Connect Claude Desktop to the NYC Contracting Explorer for AI-powered procuremen
 ### Step 1: Find your config file
 
 **Mac:**
+
 ```
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
 **Windows:**
+
 ```
 %APPDATA%\Claude\claude_desktop_config.json
 ```
@@ -57,15 +64,15 @@ Ask Claude things like:
 - *"Give me an overview of NYC procurement data"*
 - *"What vendors does the Department of Education use?"*
 - *"Show me vendor certification statistics"*
-- *"Find solicitations for software development"*
 
 ---
 
 ## Available Tools
 
-### 📊 Statistics & Aggregation
+### Statistics & Aggregation
+
 | Tool | What it does |
-|------|--------------|
+| ---- | ------------ |
 | `get_database_overview` | Complete summary of all NYC procurement data |
 | `get_contract_stats` | Count contracts by agency and/or fiscal year |
 | `get_agency_contracts` | Summary for specific agency with top vendors |
@@ -73,16 +80,18 @@ Ask Claude things like:
 | `get_solicitation_stats` | Solicitation trends by status and method |
 | `get_yearly_trends` | Year-over-year procurement trends |
 
-### 🔍 Search Tools
+### Search Tools
+
 | Tool | What it does |
-|------|--------------|
+| ---- | ------------ |
 | `search_vendors` | Find NYC vendors by name |
 | `search_contracts` | Search contracts by agency, vendor, status |
 | `search_solicitations` | Find open/past solicitations |
 
-### 💰 Spending Data
+### Spending Data
+
 | Tool | What it does |
-|------|--------------|
+| ---- | ------------ |
 | `get_spending_by_year` | Checkbook NYC spending by fiscal year |
 | `get_vendor_spending` | Spending history for specific vendor |
 
@@ -100,21 +109,24 @@ Ask Claude things like:
 ## Troubleshooting
 
 ### "Could Not Load App Settings" error
+
 Make sure your JSON is valid. Check for:
 - Missing commas
 - Unclosed brackets
 - Extra trailing commas
 
 ### Connection timeout
+
 The MCP server may take a few seconds to connect on first use. Try again after a moment.
 
 ### Tools not appearing
+
 Completely quit Claude Desktop (not just close the window) and reopen it.
 
 ---
 
 ## Need Help?
 
-- **Live Demo**: [oce.wegov.nyc](https://oce.wegov.nyc)
-- **GitHub**: [wegovnyc/nyc-contracting-explorer](https://github.com/wegovnyc/nyc-contracting-explorer)
-- **WeGov NYC**: [wegov.nyc](https://wegov.nyc)
+- [Live Demo (oce.wegov.nyc)](https://oce.wegov.nyc)
+- [GitHub Repository](https://github.com/wegovnyc/nyc-contracting-explorer)
+- [WeGov NYC](https://wegov.nyc)

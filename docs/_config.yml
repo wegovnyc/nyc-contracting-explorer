@@ -1,0 +1,6 @@
+theme: jekyll-theme-minimal
+title: NYC Contracting Explorer
+description: AI-powered exploration of NYC procurement data
+markdown: kramdown
+kramdown:
+  input: GFM
