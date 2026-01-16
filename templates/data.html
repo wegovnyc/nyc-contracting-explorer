@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>About</h2>
+
+<div class="mb-5">
+    <div class="mb-4">
+        <p class="lead" style="font-size: 1.1rem;">
+            This website was produced by <a href="https://wegov.nyc" target="_blank">WeGov.NYC</a>, a nonprofit
+            initiative of <a href="https://sarapis.org" target="_blank">Sarapis</a>.
+            You can learn more about the data below. If you have questions, comments, ideas, etc please email <a
+                href="mailto:info@wegov.nyc">info@wegov.nyc</a>.
+        </p>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Datasets</h4>
+            <p class="text-muted mb-0 mt-1">The following datasets are used to power the NYC Contract Explorer.</p>
+        </div>
+        <span class="badge badge-secondary">{{ datasets|length }} Resources</span>
+    </div>
+    <div class="table-responsive bg-white border rounded">
+        <table class="table table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Dataset Name</th>
+                    <th>Source Data</th>
+                    <th>Record Count</th>
+                    <th>Last Updated</th>
+                    <th>Next Scheduled Update</th>
+                    <th>Output Dataset</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in datasets %}
+                <tr>
+                    <td><span class="font-weight-bold text-dark">{{ d.name }}</span></td>
+                    <td><a href="{{ d.source_url }}" target="_blank" class="text-break">Source</a></td>
+                    <td>{{ d.record_count }}</td>
+                    <td>{{ d.last_updated }}</td>
+                    <td>{{ d.next_update }}</td>
+                    <td><a href="{{ d.output_url }}" target="_blank" class="text-break">Output</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

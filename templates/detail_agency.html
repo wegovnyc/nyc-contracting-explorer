@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Crunchbase-style Sticky Sidebar */
+    .sidebar-sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 2rem;
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+    }
+
+    .section-card {
+        scroll-margin-top: 6rem;
+    }
+
+    /* Override Sidebar Active Color to Dark Blue Highlight */
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: transparent !important;
+        color: #343a40 !important;
+        font-weight: bold;
+        border: 0 !important;
+        border-left: 3px solid #343a40 !important;
+        border-radius: 0;
+        box-shadow: none !important;
+        outline: none !important;
+        padding-left: 1rem;
+    }
+
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 0;
+        padding: 0.5rem 1rem;
+    }
+
+    .profile-header-icon {
+        width: 64px;
+        height: 64px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #6c757d;
+        font-weight: bold;
+    }
+</style>
+
+<div class="row mb-5">
+    <!-- Header Section -->
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-3">
+            <div class="profile-header-icon mr-3">
+                {{ name[:1] }}
+            </div>
+            <div>
+                <h1 class="mb-1">{{ name }}</h1>
+                <div class="text-muted small">
+                    <span class="badge badge-light border text-dark">
+                        NYC Agency <i class="fas fa-university ml-1 text-muted"></i>
+                    </span>
+                    <span class="mx-2">•</span>
+                    <a href="https://databook.nyc/organization/{{ id }}" target="_blank" class="text-muted"
+                        data-toggle="tooltip" title="View Source on Databook">
+                        View on Databook
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Highlights Bar -->
+        <div class="card card-body bg-light border-0 py-3 mb-4">
+            <div class="row text-center divide-cols">
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Total Awarded</div>
+                    <div class="h4 mb-0 text-dark">${{ "{:,.0f}".format(stats_total.amount) }}</div>
+                </div>
+                <div class="col-md-3">
+                    <!-- Note: 'contracts' list length used for consistency, stats_total.count matches -->
+                    <div class="small text-muted text-uppercase font-weight-bold">Contracts</div>
+                    <div class="h4 mb-0 text-dark">{{ "{:,}".format(stats_total.count) }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Solicitations</div>
+                    <div class="h4 mb-0 text-dark">{{ "{:,}".format(solicitations|length) }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">2025 Contracts</div>
+                    <div class="h4 mb-0 text-dark">{{ stats_2025.count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-md-3 d-none d-md-block">
+        <div class="sidebar-sticky">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-2 text-muted">
+                <span>Contents</span>
+            </h6>
+            <ul class="nav flex-column nav-pills" id="profile-scroll-spy">
+                {% if charts %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="#highlights">Highlights</a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#contracts">Contracts</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#solicitations">Solicitations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#vendors">Vendors</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9" data-spy="scroll" data-target="#profile-scroll-spy" data-offset="100">
+
+        {% if charts %}
+        <div id="highlights" class="section-card mb-5">
+            <h4 class="mb-4">Highlights</h4>
+
+            <div class="row">
+                <!-- Monthly Activity -->
+                <div class="col-12 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white font-weight-bold">Monthly Activity (Last 5 Years)</div>
+                        <div class="card-body">
+                            <canvas id="monthlyChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yearly Amounts -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white font-weight-bold">Spending by Year (>2021)</div>
+                        <div class="card-body">
+                            <canvas id="yearlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Vendors -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white font-weight-bold">Top Vendors (>2021)</div>
+                        <div class="card-body">
+                            <canvas id="vendorsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr class="my-5">
+        {% endif %}
+
+        <!-- Contracts Section -->
+        <div id="contracts" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Contracts</h4>
+                <span class="badge badge-secondary">{{ contracts|length }} Records</span>
+            </div>
+            <div class="table-responsive bg-white border rounded">
+                <table class="table table-hover mb-0" id="contractsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 0)">ID <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 1)">Title <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 2)">Vendor <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 3)">Amount <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 4)">Start <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th scope="col" class="cursor-pointer" onclick="sortTable('contractsTable', 5)">End <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in contracts %}
+                        <tr data-href="/contract/{{ c.ctr_id }}">
+                            <td><a href="/contract/{{ c.ctr_id }}" class="font-weight-bold text-dark">{{ c.contract_id
+                                    }}</a></td>
+                            <td class="text-truncate" style="max-width: 250px;" title="{{ c.contract_title }}">{{
+                                c.contract_title }}</td>
+                            <td>
+                                {% if vendor_id_map and vendor_id_map.get(c.vendor_name) %}
+                                <a href="/vendor/{{ vendor_id_map.get(c.vendor_name) }}">{{ c.vendor_name }}</a>
+                                {% else %}
+                                {{ c.vendor_name }}
+                                {% endif %}
+                            </td>
+                            <td class="font-weight-bold">${{ "{:,.0f}".format(c.award_amount) }}</td>
+                            <td>{{ c.start_date }}</td>
+                            <td>{{ c.end_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <nav aria-label="Contracts pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center" id="contractsTable-pagination"></ul>
+            </nav>
+        </div>
+        <hr class="my-5">
+
+        <!-- Solicitations Section -->
+        <div id="solicitations" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Solicitations</h4>
+                <span class="badge badge-secondary">{{ solicitations|length }} Records</span>
+            </div>
+            {% if solicitations %}
+            <div class="table-responsive bg-white border rounded">
+                <table class="table table-hover mb-0" id="solicitationsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th onclick="sortTable('solicitationsTable', 0)">EPIN <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('solicitationsTable', 1)">Name <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('solicitationsTable', 2)">Status <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('solicitationsTable', 3)">Due Date <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in solicitations %}
+                        <tr data-href="/solicitation/{{ s.epin }}">
+                            <td><a href="/solicitation/{{ s.epin }}" class="font-weight-bold text-dark">{{ s.epin }}</a>
+                            </td>
+                            <td class="text-truncate" style="max-width: 300px;" title="{{ s.procurement_name }}">{{
+                                s.procurement_name }}</td>
+                            <td><span class="badge badge-info">{{ s.rfx_status }}</span></td>
+                            <td>{{ s.due_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <nav aria-label="Solicitations pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center" id="solicitationsTable-pagination"></ul>
+            </nav>
+            {% else %}
+            <p class="text-muted">No solicitations founds.</p>
+            {% endif %}
+        </div>
+        <hr class="my-5">
+
+        <!-- Vendors Section -->
+        <div id="vendors" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Vendors</h4>
+                <span class="badge badge-secondary">{{ agency_vendors|length }}</span>
+            </div>
+            <div class="table-responsive bg-white border rounded">
+                <table class="table table-hover mb-0" id="vendorsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th onclick="sortTable('vendorsTable', 0)">Vendor Name <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('vendorsTable', 1)">Contracts <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th class="text-right" onclick="sortTable('vendorsTable', 2)">Total Awarded <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in agency_vendors %}
+                        <tr>
+                            <td>
+                                {% if v.id %}
+                                <a href="/vendor/{{ v.id }}" class="font-weight-bold">{{ v.name }}</a>
+                                {% else %}
+                                {{ v.name }}
+                                {% endif %}
+                            </td>
+                            <td>{{ v.contracts }}</td>
+                            <td class="text-right font-weight-bold">${{ "{:,.0f}".format(v.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <nav aria-label="Vendors pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center" id="vendorsTable-pagination"></ul>
+            </nav>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% if charts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currencyFmt = (val) => '$' + val.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+        // 1. Monthly Activity
+        const ctxM = document.getElementById('monthlyChart');
+        if (ctxM) {
+            new Chart(ctxM, {
+                type: 'bar',
+                data: {
+                    labels: {{ charts.timeline.labels | tojson }},
+        datasets: [
+            { label: 'Amount ($)', data: {{ charts.timeline.contract_amounts | tojson }}, type: 'line', borderColor: '#007bff', borderWidth: 2, yAxisID: 'y' },
+        { label: 'Contracts', data: {{ charts.timeline.contract_counts | tojson }}, backgroundColor: 'rgba(0,123,255,0.5)', yAxisID: 'y1' },
+        { label: 'Solicitations', data: {{ charts.timeline.solicitation_counts | tojson }}, backgroundColor: 'rgba(220,53,69,0.5)', yAxisID: 'y1' }
+                    ]
+                },
+        options: {
+        responsive: true,
+        scales: {
+            y: { type: 'linear', position: 'left', ticks: { callback: (val) => '$' + (val / 1000000).toFixed(1) + 'M' } },
+            y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+        }
+    }
+            });
+        }
+
+    // 2. Yearly
+    const ctxY = document.getElementById('yearlyChart');
+    if (ctxY) {
+        new Chart(ctxY, {
+            type: 'bar',
+            data: {
+                labels: {{ charts.yearly.labels | tojson }},
+    datasets: [{ label: 'Total ($)', data: {{ charts.yearly.data_values | tojson }}, backgroundColor: '#17a2b8' }]
+                },
+    options: { scales: { y: { ticks: { callback: currencyFmt } } } }
+            });
+        }
+
+    // 3. Vendors
+    const ctxV = document.getElementById('vendorsChart');
+    if (ctxV) {
+        new Chart(ctxV, {
+            type: 'doughnut',
+            data: {
+                labels: {{ charts.top_vendors.labels | tojson }},
+    datasets: [{ data: {{ charts.top_vendors.data_values | tojson }}, backgroundColor: ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545', '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'] }]
+                },
+    options: { plugins: { legend: { position: 'right' } } }
+            });
+        }
+    });
+</script>
+{% endif %}
+
+<script>
+    // Universal Pagination & Sorting (Copied from Vendor Profile)
+    window.paginationState = {};
+
+    function initPagination(targetId, perPage = 10) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+
+        let items = Array.from(container.getElementsByTagName('tbody')[0].getElementsByTagName('tr'));
+
+        const state = {
+            targetId: targetId,
+            perPage: perPage,
+            currentPage: 1,
+            items: items,
+            totalPages: Math.ceil(items.length / perPage),
+            container: container,
+            sortDir: 'asc'
+        };
+
+        state.showPage = function (page) {
+            this.currentPage = page;
+            const start = (page - 1) * this.perPage;
+            const end = start + this.perPage;
+            const parent = this.container.getElementsByTagName('tbody')[0];
+
+            this.items.forEach(item => item.style.setProperty('display', 'none', 'important'));
+            this.items.forEach(item => parent.appendChild(item)); // Re-order DOM
+
+            for (let i = start; i < end && i < this.items.length; i++) {
+                this.items[i].style.removeProperty('display');
+            }
+            updateButtons(this, page);
+        };
+
+        window.paginationState[targetId] = state;
+        if (items.length <= perPage) {
+            items.forEach(item => item.style.removeProperty('display'));
+            return;
+        }
+        state.showPage(1);
+    }
+
+    function updateButtons(state, page) {
+        const cont = document.getElementById(state.targetId + '-pagination');
+        if (!cont) return;
+        cont.innerHTML = '';
+
+        const createButton = (text, p, isActive, isDisabled) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = 'javascript:void(0)';
+            a.innerHTML = text;
+            if (!isDisabled) a.onclick = () => state.showPage(p);
+            li.appendChild(a);
+            return li;
+        };
+
+        cont.appendChild(createButton('&laquo;', page - 1, false, page === 1));
+
+        let start = Math.max(1, page - 2), end = Math.min(state.totalPages, page + 2);
+        if (start > 1) {
+            cont.appendChild(createButton('1', 1, false, false));
+            if (start > 2) cont.appendChild(createButton('...', 1, false, true));
+        }
+        for (let i = start; i <= end; i++) cont.appendChild(createButton(i, i, i === page, false));
+        if (end < state.totalPages) {
+            if (end < state.totalPages - 1) cont.appendChild(createButton('...', state.totalPages, false, true));
+            cont.appendChild(createButton(state.totalPages, state.totalPages, false, false));
+        }
+        cont.appendChild(createButton('&raquo;', page + 1, false, page === state.totalPages));
+    }
+
+    function sortTable(tableId, n) {
+        const state = window.paginationState[tableId];
+        if (!state) return;
+
+        state.sortDir = (state.sortDir === 'asc') ? 'desc' : 'asc';
+        const dir = state.sortDir;
+
+        state.items.sort((a, b) => {
+            const cellA = a.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+            const cellB = b.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+
+            const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ""));
+            const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ""));
+            const isNum = !isNaN(numA) && !isNaN(numB) && (cellA.includes('$') || cellA.match(/^\d/));
+
+            if (isNum) return (dir === 'asc') ? numA - numB : numB - numA;
+            if (cellA < cellB) return (dir === 'asc') ? -1 : 1;
+            if (cellA > cellB) return (dir === 'asc') ? 1 : -1;
+            return 0;
+        });
+        state.showPage(1);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Fix ScrollSpy
+        $('body').scrollspy({ target: '#profile-scroll-spy', offset: 100 });
+
+        initPagination('contractsTable', 10);
+        initPagination('solicitationsTable', 10);
+        initPagination('vendorsTable', 10);
+    });
+</script>
+{% endblock %}

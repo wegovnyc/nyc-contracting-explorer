@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Vendors</h2>
+
+<div class="mb-4">
+    <div class="card card-body bg-light border-0">
+        <form action="/vendors" method="get" class="row align-items-end">
+            <!-- Search -->
+            <div class="col-md-4 mb-3 mb-md-0">
+                <label class="small font-weight-bold text-muted">Search Vendors</label>
+                <input type="text" name="q" class="form-control" placeholder="Name, ID, or FMS Code"
+                    value="{{ search_query }}">
+            </div>
+
+            <!-- MOCS Filter -->
+            <div class="col-md-3 mb-3 mb-md-0">
+                <label class="small font-weight-bold text-muted">Doing Business Database</label>
+                <select name="filter" class="custom-select">
+                    <option value="all" {% if not filter_type or filter_type=='all' %}selected{% endif %}>All Vendors
+                    </option>
+                    <option value="yes" {% if filter_type=='yes' or filter_type=='mocs' %}selected{% endif %}>In
+                        Database
+                        (Yes)</option>
+                    <option value="no" {% if filter_type=='no' %}selected{% endif %}>Not in Database (No)</option>
+                </select>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-md-3 mb-3 mb-md-0">
+                <label class="small font-weight-bold text-muted">Business Category</label>
+                <select name="category" class="custom-select">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                    <option value="{{ c }}" {% if current_category==c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Tags Filter -->
+            <div class="col-md-2 mb-3 mb-md-0">
+                <label class="small font-weight-bold text-muted">Tags</label>
+                <select name="tag" class="custom-select">
+                    <option value="">All Tags</option>
+                    {% for t in tags %}
+                    <option value="{{ t }}" {% if current_tag==t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- MWBE Filter -->
+            <div class="col-md-2 mb-3 mb-md-0">
+                <label class="small font-weight-bold text-muted">MWBE Status</label>
+                <select name="mwbe" class="custom-select">
+                    <option value="">All</option>
+                    {% for m in mwbe_options %}
+                    <option value="{{ m }}" {% if current_mwbe==m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-block">Filter</button>
+            </div>
+
+            <!-- Preserve Sort Params -->
+            {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+            {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Vendors</h4>
+        <span class="badge badge-secondary">{{ count }} Records</span>
+    </div>
+    <div class="table-responsive bg-white border rounded">
+        <table class="table table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>ID</th>
+                    <th>
+                        <a href="{{ url_for('vendors', sort='name', order=('desc' if sort == 'name' and order == 'asc' else 'asc'), filter=filter_type, q=search_query, category=current_category, tag=current_tag, mwbe=current_mwbe) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Name {% if sort == 'name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>Business Category</th>
+                    <th>FMS Code</th>
+                    <th>DBDB</th>
+                    <th>
+                        <a href="{{ url_for('vendors', sort='contracts', order=('desc' if sort == 'contracts' and order == 'asc' else 'asc'), filter=filter_type, q=search_query, category=current_category, tag=current_tag, mwbe=current_mwbe) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Contracts {% if sort == 'contracts' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('vendors', sort='amount', order=('desc' if sort == 'amount' and order == 'asc' else 'asc'), filter=filter_type, q=search_query, category=current_category, tag=current_tag, mwbe=current_mwbe) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Total Awarded {% if sort == 'amount' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr data-href="/vendor/{{ row['passport_supplier_id'] }}">
+                    <td>{{ row['passport_supplier_id'] }}</td>
+                    <td>
+                        <a href="/vendor/{{ row['passport_supplier_id'] }}" class="font-weight-bold text-dark">{{
+                            row['name'] }}</a>
+                        {% if row['certification_type'] and row['certification_type'] != 'Non-MWBE' %}
+                        <br><span class="badge badge-warning" style="font-size: 80%;">{{ row['certification_type']
+                            }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ row['business_category'] }}</td>
+                    <td>{{ row['fms_vendor_code'] }}</td>
+                    <td class="text-center">{% if row['in_mocs'] %}✅{% endif %}</td>
+                    <td>{{ row['contract_count'] }}</td>
+                    <td>${{ "{:,.2f}".format(row['total_awarded'] or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Vendors pagination" class="mt-3">
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if page > 1 %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('vendors', page=page-1, filter=filter_type, q=search_query, sort=sort, order=order, category=current_category, tag=current_tag, mwbe=current_mwbe) }}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled"><a class="page-link" href="#">Page {{ page }} of {{ pages }}</a></li>
+            {% if page < pages %} <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('vendors', page=page+1, filter=filter_type, q=search_query, sort=sort, order=order, category=current_category, tag=current_tag, mwbe=current_mwbe) }}">Next</a>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

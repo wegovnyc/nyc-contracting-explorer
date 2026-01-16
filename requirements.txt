@@ -1,0 +1,9 @@
+flask
+pandas
+gunicorn
+markdown
+beautifulsoup4
+markdownify
+requests
+duckdb
+mcp[cli]

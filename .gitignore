@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Data files (download separately)
+*.db
+*.sqlite
+*.csv
+*.parquet
+
+# Logs
+*.log
+flask_log*.txt
+backfill.log
+
+# Deployment packages
+*.tar.gz
+deploy*.tar.gz
+
+# Debug/temp files
+page_*.html
+*.html.bak
+
+# Sensitive files
+*.pem
+*.key
+.env
+.env.*
+secrets.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Nginx configs (use samples instead)
+*.conf
+!*.conf.sample
+
+# Service files (system specific)
+*.service
+
+# Test outputs
+opencorp_fetch_log.txt
+opencorporates_matches.csv

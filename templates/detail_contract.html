@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Crunchbase-style Sticky Sidebar */
+    .sidebar-sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 2rem;
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+    }
+
+    .section-card {
+        scroll-margin-top: 6rem;
+    }
+
+    /* Override Sidebar Active Color to Dark Blue Highlight */
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: transparent !important;
+        color: #343a40 !important;
+        font-weight: bold;
+        border: 0 !important;
+        border-left: 3px solid #343a40 !important;
+        border-radius: 0;
+        box-shadow: none !important;
+        outline: none !important;
+        padding-left: 1rem;
+    }
+
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 0;
+        padding: 0.5rem 1rem;
+    }
+
+    .profile-header-icon {
+        width: 64px;
+        height: 64px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #6c757d;
+        font-weight: bold;
+    }
+</style>
+
+<div class="row mb-5">
+    <!-- Header Section -->
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-3">
+            <div class="profile-header-icon mr-3">
+                <i class="fas fa-file-contract"></i>
+            </div>
+            <div>
+                <h1 class="mb-1">{{ contract.contract_id }}</h1>
+                <div class="text-muted small">
+                    <span class="badge badge-light border text-dark">
+                        Contract <i class="fas fa-info-circle ml-1 text-muted"></i>
+                    </span>
+                    <span class="mx-2">•</span>
+                    {% if contract.status %}
+                    <span class="badge badge-secondary">{{ contract.status }}</span>
+                    {% endif %}
+
+                    {% if checkbook_contract %}
+                    <span class="mx-2">•</span>
+                    <span class="badge badge-success">Checkbook Data Available</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Highlights Bar -->
+        <div class="card card-body bg-light border-0 py-3 mb-4">
+            <div class="row text-center divide-cols">
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Award Amount</div>
+                    <div class="h4 mb-0 text-dark">${{ "{:,.0f}".format(contract.award_amount) }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Start Date</div>
+                    <div class="h5 mb-0 text-dark pt-1">{{ contract.start_date }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">End Date</div>
+                    <div class="h5 mb-0 text-dark pt-1">{{ contract.end_date }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Record ID</div>
+                    <div class="h5 mb-0 text-dark pt-1">{{ contract.contract_id }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-md-3 d-none d-md-block">
+        <div class="sidebar-sticky">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-2 text-muted">
+                <span>Contents</span>
+            </h6>
+            <ul class="nav flex-column nav-pills" id="profile-scroll-spy">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#details">Details</a>
+                </li>
+                {% if vendor %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#vendor">Vendor</a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#spending">Spending</a>
+                </li>
+
+                {% if solicitation %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#solicitation">Solicitation</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9" data-spy="scroll" data-target="#profile-scroll-spy" data-offset="100">
+
+        <!-- Details Section -->
+        <div id="details" class="section-card mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">MOCS Contract Details</h4>
+            </div>
+            <div class="card bg-white border h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ contract.contract_title }}</h5>
+                    <hr>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-muted">Agency</dt>
+                        <dd class="col-sm-9"><a href="/agency/{{ contract.agency_id }}">{{ contract.agency }}</a></dd>
+
+                        <dt class="col-sm-3 text-muted">Vendor</dt>
+                        <dd class="col-sm-9">{{ contract.vendor_name }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Award Amount</dt>
+                        <dd class="col-sm-9 font-weight-bold">${{ "{:,.0f}".format(contract.award_amount) }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Status</dt>
+                        <dd class="col-sm-9">{{ contract.status }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Start Date</dt>
+                        <dd class="col-sm-9">{{ contract.start_date }}</dd>
+
+                        <dt class="col-sm-3 text-muted">End Date</dt>
+                        <dd class="col-sm-9">{{ contract.end_date }}</dd>
+
+                        <dt class="col-sm-3 text-muted">EPIN</dt>
+                        <dd class="col-sm-9">
+                            {% if solicitation %}
+                            <a href="/solicitation/{{ solicitation.epin }}">{{ contract.epin }}</a>
+                            {% else %}
+                            {{ contract.epin }}
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <hr class="my-3">
+
+        <div id="checkbook-container"></div>
+
+        {% if vendor %}
+        <!-- Vendor Section -->
+        <div id="vendor" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Vendor Profile</h4>
+                <a href="/vendor/{{ vendor.passport_supplier_id }}" class="btn btn-sm btn-outline-primary">View Full
+                    Profile</a>
+            </div>
+            <div class="card bg-white border">
+                <div class="card-body">
+                    <h5 class="card-title">{{ vendor.name }}</h5>
+                    <hr>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-muted">PASSPort ID</dt>
+                        <dd class="col-sm-9"><a href="/vendor/{{ vendor.passport_supplier_id }}">{{
+                                vendor.passport_supplier_id }}</a></dd>
+
+                        <dt class="col-sm-3 text-muted">Category</dt>
+                        <dd class="col-sm-9">{{ vendor.business_category }}</dd>
+
+                        <dt class="col-sm-3 text-muted">FMS Code</dt>
+                        <dd class="col-sm-9">{{ vendor.fms_vendor_code }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Structure</dt>
+                        <dd class="col-sm-9">{{ vendor.corporate_structure }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <hr class="my-5">
+        {% endif %}
+
+        <!-- Spending Section (Lazy Load) -->
+        <div id="spending" class="section-card mb-5">
+            <h4 class="mb-4">Spending & Transactions</h4>
+            <div id="transactions-content" class="min-vh-50">
+                <div class="d-flex justify-content-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading transactions...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr class="my-5">
+
+
+
+
+
+        {% if solicitation %}
+        <!-- Solicitation Section -->
+        <div id="solicitation" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Linked Solicitation</h4>
+                <a href="/solicitation/{{ solicitation.epin }}" class="btn btn-sm btn-outline-primary">View
+                    Solicitation</a>
+            </div>
+            <div class="card bg-white border">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="card-title text-truncate w-75">{{ solicitation.procurement_name }}</h5>
+                        <span class="badge badge-light border">{{ solicitation.rfx_status }}</span>
+                    </div>
+                    <hr>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-muted">EPIN</dt>
+                        <dd class="col-sm-9">{{ solicitation.epin }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Method</dt>
+                        <dd class="col-sm-9">{{ solicitation.procurement_method }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Industry</dt>
+                        <dd class="col-sm-9">{{ solicitation.industry }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Due Date</dt>
+                        <dd class="col-sm-9">{% if solicitation.due_date and solicitation.due_date|length >= 10 %}{{
+                            solicitation.due_date[5:7] }}/{{ solicitation.due_date[8:10] }}/{{ solicitation.due_date[:4]
+                            }}{% else %}{{ solicitation.due_date }}{% endif %}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    // Universal Pagination & Sorting System
+    window.paginationState = {};
+
+    function initPagination(targetId, perPage = 10) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+
+        let items = [];
+        if (container.tagName === 'TABLE') {
+            items = Array.from(container.getElementsByTagName('tbody')[0].getElementsByTagName('tr'));
+        } else if (container.tagName === 'UL') {
+            items = Array.from(container.getElementsByTagName('li'));
+        }
+
+        const state = {
+            targetId: targetId,
+            perPage: perPage,
+            currentPage: 1,
+            items: items,
+            totalPages: Math.ceil(items.length / perPage),
+            container: container,
+            sortDir: 'asc'
+        };
+
+        state.showPage = function (page) {
+            this.currentPage = page;
+            const start = (page - 1) * this.perPage;
+            const end = start + this.perPage;
+            const parent = (this.container.tagName === 'TABLE') ? this.container.getElementsByTagName('tbody')[0] : this.container;
+
+            this.items.forEach(item => item.style.setProperty('display', 'none', 'important'));
+            this.items.forEach(item => parent.appendChild(item));
+
+            for (let i = start; i < end && i < this.items.length; i++) {
+                this.items[i].style.removeProperty('display');
+            }
+            updateButtons(this, page);
+        };
+
+        window.paginationState[targetId] = state;
+        if (items.length <= perPage) {
+            items.forEach(item => item.style.removeProperty('display'));
+            return;
+        }
+        state.showPage(1);
+    }
+
+    function updateButtons(state, page) {
+        const cont = document.getElementById(state.targetId + '-pagination');
+        if (!cont) return;
+        cont.innerHTML = '';
+
+        const createButton = (text, p, isActive, isDisabled) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = 'javascript:void(0)';
+            a.innerHTML = text;
+            if (!isDisabled) a.onclick = () => state.showPage(p);
+            li.appendChild(a);
+            return li;
+        };
+
+        cont.appendChild(createButton('&laquo;', page - 1, false, page === 1));
+
+        let start = Math.max(1, page - 2), end = Math.min(state.totalPages, page + 2);
+        if (start > 1) {
+            cont.appendChild(createButton('1', 1, false, false));
+            if (start > 2) cont.appendChild(createButton('...', 1, false, true));
+        }
+        for (let i = start; i <= end; i++) cont.appendChild(createButton(i, i, i === page, false));
+        if (end < state.totalPages) {
+            if (end < state.totalPages - 1) cont.appendChild(createButton('...', state.totalPages, false, true));
+            cont.appendChild(createButton(state.totalPages, state.totalPages, false, false));
+        }
+        cont.appendChild(createButton('&raquo;', page + 1, false, page === state.totalPages));
+    }
+
+    function sortTable(tableId, n) {
+        const state = window.paginationState[tableId];
+        if (!state) return;
+
+        state.sortDir = (state.sortDir === 'asc') ? 'desc' : 'asc';
+        const dir = state.sortDir;
+
+        state.items.sort((a, b) => {
+            const cellA = a.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+            const cellB = b.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+
+            const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ""));
+            const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ""));
+            const isNum = !isNaN(numA) && !isNaN(numB) && (cellA.includes('$') || cellA.match(/^\d/));
+
+            if (isNum) return (dir === 'asc') ? numA - numB : numB - numA;
+            if (cellA < cellB) return (dir === 'asc') ? -1 : 1;
+            if (cellA > cellB) return (dir === 'asc') ? 1 : -1;
+            return 0;
+        });
+        state.showPage(1);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Fix ScrollSpy
+        $('body').scrollspy({ target: '#profile-scroll-spy', offset: 100 });
+
+        // Lazy Load Transactions with Pagination Init
+        const ctrId = "{{ contract.ctr_id }}";
+        const contentDiv = document.getElementById('transactions-content');
+
+        if (ctrId) {
+            // 1. Transactions
+            fetch(`/contract/${ctrId}/transactions`)
+                .then(response => response.text())
+                .then(html => {
+                    contentDiv.innerHTML = html;
+                    initPagination('transactionsTable', 10);
+                })
+                .catch(err => {
+                    console.error('Error loading transactions', err);
+                    contentDiv.innerHTML = '<div class="alert alert-warning">Failed to load spending data.</div>';
+                });
+
+            // 2. Checkbook Details
+            fetch(`/contract/${ctrId}/checkbook_details`)
+                .then(response => response.text())
+                .then(html => {
+                    if (html.trim()) {
+                        document.getElementById('checkbook-container').innerHTML = html;
+                        const navLink = document.getElementById('nav-checkbook');
+                        if (navLink) navLink.style.display = 'block';
+                    }
+                })
+                .catch(err => console.error('Error loading checkbook details', err));
+        }
+    });
+</script>
+{% endblock %}

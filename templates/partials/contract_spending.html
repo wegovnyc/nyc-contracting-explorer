@@ -1,0 +1,116 @@
+{% if spending_summary %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+        <strong>Checkbook NYC Spending</strong>
+        <span class="badge badge-light float-right">${{ "{:,.0f}".format(spending_total) }}</span>
+    </div>
+    <div class="card-body">
+
+        <!-- Summary Table -->
+        <h6 class="text-muted mb-3">Spending by Fiscal Year</h6>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Fiscal Year</th>
+                        <th class="text-right">Total Spent</th>
+                        <th class="text-right">Transactions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in spending_summary %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td class="text-right font-weight-bold">${{ "{:,.2f}".format(row[1]) }}</td>
+                        <td class="text-right">{{ row[2] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <hr>
+
+        <!-- All Transactions Table -->
+        <h6 class="text-muted mb-3">Recent Transactions (Max 500)</h6>
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-striped" id="transactionsTable">
+                <thead class="thead-light">
+                    <tr>
+                        <th onclick="sortTable('transactionsTable', 0)" style="cursor: pointer;">Issue Date <i
+                                class="fas fa-sort small text-muted"></i></th>
+                        <th onclick="sortTable('transactionsTable', 1)" style="cursor: pointer;">Payee <i
+                                class="fas fa-sort small text-muted"></i></th>
+                        <th>Category</th>
+                        <th>Agency</th>
+                        <th class="text-right" onclick="sortTable('transactionsTable', 4)" style="cursor: pointer;">
+                            Amount <i class="fas fa-sort small text-muted"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr style="cursor: pointer;" data-toggle="modal" data-target="#txModal{{ loop.index }}">
+                        <td>
+                            {% if t.issue_date and t.issue_date|length >= 10 %}
+                            {{ t.issue_date[5:7] }}/{{ t.issue_date[8:10] }}/{{ t.issue_date[:4] }}
+                            {% else %}
+                            {{ t.issue_date }}
+                            {% endif %}
+                        </td>
+                        <td>{{ t.payee_name }}</td>
+                        <td>{{ t.expense_category }}</td>
+                        <td>{{ t.agency }}</td>
+                        <td class="text-right font-weight-bold">${{ "{:,.2f}".format(t.amount_dbl or 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div id="transactionsTable-pagination-container" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center" id="transactionsTable-pagination"></ul>
+            </div>
+        </div>
+        <p class="text-muted mt-2"><small>Click any row to view full details. Source: Checkbook NYC.</small></p>
+        {% else %}
+        <p class="text-muted">No individual transactions found.</p>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Modals for Transaction Details -->
+{% for t in transactions %}
+<div class="modal fade" id="txModal{{ loop.index }}" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaction Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                    <tbody>
+                        {% for key, value in t.items() %}
+                        <tr>
+                            <th class="bg-light" style="width: 30%">{{ key|replace('_', ' ')|title }}</th>
+                            <td class="text-break">{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<!-- No spending data found -->
+<div class="alert alert-light border text-center text-muted">
+    No Checkbook NYC spending data found for this contract.
+</div>
+{% endif %}

@@ -1,0 +1,69 @@
+{% if transactions %}
+<div class="table-responsive">
+    <table class="table table-striped table-sm mb-0" id="transactionsTable">
+        <thead class="thead-light">
+            <tr>
+                <th onclick="sortTable('transactionsTable', 0)" style="cursor: pointer;">Date <i
+                        class="fas fa-sort small text-muted"></i></th>
+                <th onclick="sortTable('transactionsTable', 1)" style="cursor: pointer;">Agency <i
+                        class="fas fa-sort small text-muted"></i></th>
+                <th onclick="sortTable('transactionsTable', 2)" style="cursor: pointer;">Category <i
+                        class="fas fa-sort small text-muted"></i></th>
+                <th onclick="sortTable('transactionsTable', 3)" style="cursor: pointer;">Amount <i
+                        class="fas fa-sort small text-muted"></i></th>
+                <th>Budget Code</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr style="cursor: pointer;" data-toggle="modal" data-target="#txModal{{ loop.index }}">
+                <td>
+                    {% if tx.issue_date and tx.issue_date|length >= 10 %}
+                    {{ tx.issue_date[5:7] }}/{{ tx.issue_date[8:10] }}/{{ tx.issue_date[:4] }}
+                    {% else %}
+                    {{ tx.issue_date }}
+                    {% endif %}
+                </td>
+                <td>{{ tx.agency }}</td>
+                <td>{{ tx.spending_category }}</td>
+                <td class="font-weight-bold">${{ "{:,.2f}".format(tx.check_amount|float) }}</td>
+                <td>{{ tx.budget_code }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="text-muted mt-2"><small>Click any row to view full details. Showing top 50 recent transactions. Data source:
+        S3/Parquet.</small></p>
+
+<!-- Modals -->
+{% for tx in transactions %}
+<div class="modal fade" id="txModal{{ loop.index }}" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaction Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                    <tbody>
+                        {% for key, value in tx.items() %}
+                        <tr>
+                            <th style="width: 30%">{{ key|replace('_', ' ')|title }}</th>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<p class="text-center py-4 text-muted">No transaction records found in the current dataset slice for this vendor.</p>
+{% endif %}

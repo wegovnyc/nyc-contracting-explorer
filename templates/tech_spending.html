@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-light p-5 rounded mb-4">
+    <h1>NYC Tech Spending Analysis</h1>
+    <p class="lead">Exploring the landscape of digital services spending (FY2016-2025)</p>
+</div>
+
+<div class="row mb-4">
+    <!-- Key Finding: Digital Vendors -->
+    <div class="col-md-6">
+        <div class="card text-white bg-info mb-3 h-100">
+            <div class="card-header">Digital Vendors</div>
+            <div class="card-body">
+                <h2 class="card-title">{{ class_stats.get('Digital', {}).get('count', 0) }} Vendors</h2>
+                <p class="card-text display-4">${{ "{:,.0f}".format(class_stats.get('Digital', {}).get('fy2025_total',
+                    0) / 1000000) }}M</p>
+                <p>FY2025 Spending (Pure Digital Services)</p>
+            </div>
+        </div>
+    </div>
+    <!-- Key Finding: Mixed Vendors -->
+    <div class="col-md-6">
+        <div class="card text-white bg-warning mb-3 h-100">
+            <div class="card-header">Mixed Vendors</div>
+            <div class="card-body">
+                <h2 class="card-title">{{ class_stats.get('Mixed', {}).get('count', 0) }} Vendors</h2>
+                <p class="card-text display-4">${{ "{:,.0f}".format(class_stats.get('Mixed', {}).get('fy2025_total', 0)
+                    / 1000000) }}M</p>
+                <p>FY2025 Spending (IT Resellers + Services)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-5">
+    <div class="card-header">
+        <strong>10-Year Spending Trend (Digital vs. Mixed)</strong>
+    </div>
+    <div class="card-body">
+        <canvas id="trendChart" height="100"></canvas>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">Top Digital Vendors (FY2025)</div>
+            <ul class="list-group list-group-flush">
+                {% for v in top_digital %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if v.matched_passport_id %}
+                        <a href="/vendor/{{ v.matched_passport_id }}">{{ v.vendor_name }}</a>
+                        {% else %}
+                        {{ v.vendor_name }}
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ v.description[:50] }}...</small>
+                    </div>
+                    <strong>${{ "{:,.1f}M".format(v.fy2025 / 1000000) }}</strong>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">Top Mixed Vendors (FY2025)</div>
+            <ul class="list-group list-group-flush">
+                {% for v in top_mixed %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if v.matched_passport_id %}
+                        <a href="/vendor/{{ v.matched_passport_id }}" class="text-dark">{{ v.vendor_name }}</a>
+                        {% else %}
+                        {{ v.vendor_name }}
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ v.description[:50] }}...</small>
+                    </div>
+                    <strong>${{ "{:,.1f}M".format(v.fy2025 / 1000000) }}</strong>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ trend_data.labels | tojson }},
+        datasets: [
+        {
+            label: 'Mixed Vendors (Hardware/Resellers)',
+            data: {{ trend_data.mixed | tojson }},
+        borderColor: 'rgb(255, 193, 7)',
+        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+        fill: true,
+        tension: 0.3
+                    },
+        {
+            label: 'Digital Vendors (Consulting/Services)',
+            data: {{ trend_data.digital | tojson }},
+        borderColor: 'rgb(23, 162, 184)',
+        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+        fill: true,
+        tension: 0.3
+                    }
+    ]
+            },
+        options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function (value) {
+                        return '$' + (value / 1000000).toFixed(0) + 'M';
+                    }
+                }
+            }
+        }
+    }
+        });
+    });
+</script>
+
+{% endblock %}

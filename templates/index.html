@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-8">
+            <h1 class="display-4 font-weight-bold">NYC Contract Explorer</h1>
+            <p class="lead text-muted">Explore NYC government contracts, solicitations and vendors using data from the
+                Mayor's Office of Contract Services, NYC Open Data, and Checkbook NYC.</p>
+        </div>
+        <div class="col-lg-4 text-lg-right">
+            <a href="/about" class="btn btn-outline-primary">Learn More About the Data</a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-5">
+        <div class="col-md-2dot4 mb-4">
+            <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+                <div class="card-body text-center">
+                    <h2 class="display-5 font-weight-bold text-dark">{{
+                        "{:.0f}M".format(stats['transactions']/1000000) }}</h2>
+                    <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Total Transactions</h6>
+                    <div class="mt-3">
+                        <a href="/transactions"
+                            class="btn btn-sm btn-light text-dark font-weight-bold rounded-pill px-3">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2dot4 mb-4">
+            <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+                <div class="card-body text-center">
+                    <h2 class="display-5 font-weight-bold text-dark">{{ "{:,}".format(stats['agencies']) }}</h2>
+                    <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Agencies</h6>
+                    <div class="mt-3">
+                        <a href="/agencies"
+                            class="btn btn-sm btn-light text-dark font-weight-bold rounded-pill px-3">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2dot4 mb-4">
+            <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+                <div class="card-body text-center">
+                    <h2 class="display-5 font-weight-bold text-dark">{{ "{:,}".format(stats['vendors']) }}</h2>
+                    <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Vendors</h6>
+                    <div class="mt-3">
+                        <a href="/vendors"
+                            class="btn btn-sm btn-light text-dark font-weight-bold rounded-pill px-3">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2dot4 mb-4">
+            <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+                <div class="card-body text-center">
+                    <h2 class="display-5 font-weight-bold text-dark">{{ "{:,}".format(stats['solicitations']) }}</h2>
+                    <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Solicitations</h6>
+                    <div class="mt-3">
+                        <a href="/solicitations"
+                            class="btn btn-sm btn-light text-dark font-weight-bold rounded-pill px-3">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2dot4 mb-4">
+            <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+                <div class="card-body text-center">
+                    <h2 class="display-5 font-weight-bold text-dark">{{ "{:,}".format(stats['contracts']) }}</h2>
+                    <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Contracts</h6>
+                    <div class="mt-3">
+                        <a href="/contracts"
+                            class="btn btn-sm btn-light text-dark font-weight-bold rounded-pill px-3">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Featured Projects -->
+    <div class="mb-5">
+        <h3 class="font-weight-bold mb-4 border-bottom pb-2">Featured Projects</h3>
+        <div class="card border-0 shadow-sm overflow-hidden rounded-lg">
+            <div class="row no-gutters">
+                <div class="col-md-8 bg-dark text-white p-5 d-flex align-items-center">
+                    <div>
+                        <h2 class="font-weight-bold mb-3">Digital Service Reform</h2>
+                        <p class="lead text-white-50 mb-4">An in-depth analysis of who is selling digital services to
+                            NYC, what those services entail, when contracts expire, and identifying renewal risks.</p>
+                        <a href="{{ url_for('digital_service_reform') }}"
+                            class="btn btn-warning btn-lg font-weight-bold rounded-pill px-4">Explore Project</a>
+                    </div>
+                </div>
+                <div class="col-md-4 bg-light d-flex align-items-center justify-content-center p-4">
+                    <!-- Placeholder icon or mini chart could go here -->
+                    <div class="text-center text-muted">
+                        <h1 class="display-1 mb-0"><i class="fas fa-laptop-code"></i></h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Insights Dashboard -->
+    <div class="mb-5">
+        <h3 class="font-weight-bold mb-4 border-bottom pb-2">Insights</h3>
+
+        <!-- Time Series (Full Width) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card h-100 border-0 shadow-sm rounded-lg">
+                    <div
+                        class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">
+                        Spending Trends</div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <canvas id="timeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: Industry & Method -->
+        <div class="row mb-4">
+            <!-- Industry (Doughnut) -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm rounded-lg">
+                    <div
+                        class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">
+                        Top Industries</div>
+                    <div class="card-body">
+                        <div style="height: 250px;">
+                            <canvas id="industryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Procurement Method (Pie/Doughnut) -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm rounded-lg">
+                    <div
+                        class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">
+                        Procurement Methods</div>
+                    <div class="card-body">
+                        <div style="height: 250px;">
+                            <canvas id="methodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Agencies & Vendors -->
+        <div class="row">
+            <!-- Top Agencies (Bar) -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm rounded-lg">
+                    <div
+                        class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">
+                        Top Agencies (Spending)</div>
+                    <div class="card-body">
+                        <div style="height: 250px;">
+                            <canvas id="agencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Vendors (Bar) - New -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm rounded-lg">
+                    <div
+                        class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">
+                        Top Vendors (Spending)</div>
+                    <div class="card-body">
+                        <div style="height: 250px;">
+                            <canvas id="vendorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Updates -->
+    {% if posts %}
+    <div class="mb-5">
+        <h3 class="font-weight-bold mb-4 border-bottom pb-2">Latest Updates</h3>
+        <div class="row">
+            {% for post in posts %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm hover-shadow rounded-lg">
+                    <div class="card-body">
+                        <h5 class="card-title font-weight-bold mb-1">
+                            <a href="{{ url_for('blog_detail', slug=post.slug) }}"
+                                class="text-dark text-decoration-none stretched-link">{{ post.title }}</a>
+                        </h5>
+                        <small class="text-muted d-block mb-3">{{ post.date }}</small>
+                        <p class="card-text text-muted small">{{ post.excerpt[:120] }}...</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Custom Font Defaults
+        Chart.defaults.font.family = "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.color = '#666';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const currencyFmt = (val) => '$' + val.toLocaleString(undefined, { maximumFractionDigits: 0, notation: "compact" });
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y || context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+
+            // 1. Time Chart (Line with area feel)
+            new Chart(document.getElementById('timeChart'), {
+                type: 'line',
+                data: {
+                    labels: {{ charts.time.labels | tojson }},
+            datasets: [{
+                label: 'Total Spending',
+                data: {{ charts.time.data_values | tojson }},
+            borderColor: '#2563eb', // Blue
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 6
+                    }]
+                },
+            options: {
+            ...commonOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { borderDash: [2, 4], color: '#f0f0f0' },
+                    ticks: { callback: currencyFmt }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+            });
+
+        // 2. Industry Chart (Doughnut)
+        new Chart(document.getElementById('industryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ charts.industry.labels | tojson }},
+            datasets: [{
+                data: {{ charts.industry.data_values | tojson }},
+            backgroundColor: [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'
+            ],
+            borderWidth: 0
+                    }]
+                },
+            options: {
+            ...commonOptions,
+            cutout: '60%',
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ' ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.raw);
+                        }
+                    }
+                }
+            }
+        }
+            });
+
+        // 3. Procurement Method (Pie/Doughnut)
+        new Chart(document.getElementById('methodChart'), {
+            type: 'pie',
+            data: {
+                labels: {{ charts.method.labels | tojson }},
+            datasets: [{
+                data: {{ charts.method.data_values | tojson }},
+            backgroundColor: [
+                '#6366f1', '#ec4899', '#14b8a6', '#f97316', '#84cc16', '#06b6d4'
+            ],
+            borderWidth: 0
+                    }]
+                },
+            options: {
+            ...commonOptions,
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ' ' + context.raw + ' Contracts';
+                        }
+                    }
+                }
+            }
+        }
+            });
+
+        // 4. Top Agencies (Bar - Vertical for variety)
+        new Chart(document.getElementById('agencyChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ charts.agencies.labels | tojson }},
+            datasets: [{
+                label: 'Spending',
+                data: {{ charts.agencies.data_values | tojson }},
+            backgroundColor: '#f59e0b', // Amber/Orange
+            borderRadius: 4
+                    }]
+                },
+            options: {
+            ...commonOptions,
+            indexAxis: 'y', // Horizontal bars are often better for long names
+            scales: {
+                x: {
+                    grid: { borderDash: [2, 4], color: '#f0f0f0' },
+                    ticks: { callback: currencyFmt }
+                },
+                y: { grid: { display: false } }
+            },
+            plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+            });
+
+        // 5. Top Vendors (Bar - Vertical)
+        new Chart(document.getElementById('vendorChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ charts.vendors.labels | tojson }},
+            datasets: [{
+                label: 'Spending',
+                data: {{ charts.vendors.data_values | tojson }},
+            backgroundColor: '#0ea5e9', // Sky Blue
+            borderRadius: 4
+                    }]
+                },
+            options: {
+            ...commonOptions,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    grid: { borderDash: [2, 4], color: '#f0f0f0' },
+                    ticks: { callback: currencyFmt }
+                },
+                y: { grid: { display: false } }
+            },
+            plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+            });
+
+        });
+    </script>
+
+    <style>
+        .col-md-2dot4 {
+            flex: 0 0 20%;
+            max-width: 20%;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-2dot4 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+
+        .hover-shadow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+            transition: all 0.3s ease;
+        }
+
+        .bg-white {
+            background-color: #fff !important;
+        }
+
+        .text-dark {
+            color: #1f2937 !important;
+        }
+
+        .text-primary {
+            color: #2563eb !important;
+        }
+
+        .text-muted {
+            color: #6b7280 !important;
+        }
+
+        .rounded-lg {
+            border-radius: 0.5rem !important;
+        }
+
+        .shadow-sm {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+    </style>
+</div>
+{% endblock %}

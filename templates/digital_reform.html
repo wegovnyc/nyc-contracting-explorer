@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col-12">
+        <h1 class="display-4 font-weight-bold">Digital Service Reform</h1>
+        <p class="lead text-muted">Who is selling NYC digital services, what do those services entail, when do the
+            contracts end and which shouldn't be renewed?</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-5">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+            <div class="card-body text-center">
+                <h2 class="display-4 font-weight-bold text-dark">{{ "{:,}".format(digital_stats.count) }}</h2>
+                <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Total Digital Service
+                    Contracts</h6>
+                <small class="text-muted">Since 2022</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-shadow bg-white rounded-lg">
+            <div class="card-body text-center">
+                <h2 class="display-4 font-weight-bold text-dark">${{ "{:,.0f}".format(digital_stats.total / 1000000) }}M
+                </h2>
+                <h6 class="text-uppercase text-muted font-weight-bold small tracking-wide">Total Awarded Value</h6>
+                <small class="text-muted">Since 2022</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historical Charts -->
+<!-- Historical Charts -->
+<div class="card mb-5 border-0 shadow-sm rounded-lg">
+    <div class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">Digital
+        Services Spending Analysis (Since 2022)</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-7">
+                <h6 class="text-center font-weight-bold mb-3">Contract Value by Start Year</h6>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="digitalTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <h6 class="text-center font-weight-bold mb-3">Spending by Agency (Since 2022)</h6>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="digitalAgencyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currencyFmt = (val) => '$' + val.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        const millionsFmt = (val) => '$' + (val / 1000000).toFixed(0) + 'M';
+
+        // --- 1. Historical Digital Services Charts ---
+
+        // Trend Bar
+        new Chart(document.getElementById('digitalTrendChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ digital_charts.trend.labels | tojson }},
+        datasets: [{
+            label: 'Awarded Amount',
+            data: {{ digital_charts.trend.data_values | tojson }},
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                ticks: { callback: millionsFmt },
+                grid: { borderDash: [2, 4] }
+            },
+            x: { grid: { display: false } }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function (context) { return currencyFmt(context.parsed.y); }
+                }
+            }
+        }
+    }
+        });
+
+    // Agency Pie
+    new Chart(document.getElementById('digitalAgencyChart'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ digital_charts.agency.labels | tojson }},
+        datasets: [{
+            data: {{ digital_charts.agency.data_values | tojson }},
+        backgroundColor: [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'
+        ],
+        borderWidth: 1
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+            legend: { position: 'right', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        let val = context.parsed;
+                        return context.label + ': ' + currencyFmt(val);
+                    }
+                }
+            }
+        }
+    }
+        });
+
+   });
+</script>
+
+<div class="card mb-5 border-0 shadow-sm rounded-lg" id="digital-vendors">
+    <div class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">Digital
+        Service Vendors ({{ vendor_count }})</div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', vendor_sort='name', vendor_order='desc' if vendor_sort == 'name' and vendor_order == 'asc' else 'asc', tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors"
+                            class="text-decoration-none text-dark">
+                            Name {% if vendor_sort == 'name' %}{{ '↑' if vendor_order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', vendor_sort='classification', vendor_order='desc' if vendor_sort == 'classification' and vendor_order == 'asc' else 'asc', tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors"
+                            class="text-decoration-none text-dark">
+                            Classification {% if vendor_sort == 'classification' %}{{ '↑' if vendor_order == 'asc' else
+                            '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>Business Category</th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', vendor_sort='contracts', vendor_order='desc' if vendor_sort == 'contracts' and vendor_order == 'asc' else 'asc', tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors"
+                            class="text-decoration-none text-dark">
+                            Contracts {% if vendor_sort == 'contracts' %}{{ '↑' if vendor_order == 'asc' else '↓' }}{%
+                            endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', vendor_sort='amount', vendor_order='desc' if vendor_sort == 'amount' and vendor_order == 'asc' else 'asc', tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors"
+                            class="text-decoration-none text-dark">
+                            Total Awarded {% if vendor_sort == 'amount' %}{{ '↑' if vendor_order == 'asc' else '↓' }}{%
+                            endif %}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in digital_vendors %}
+                <tr data-href="/vendor/{{ row['passport_supplier_id'] }}">
+                    <td>{{ row['passport_supplier_id'] }}</td>
+                    <td>{{ row['name'] }}</td>
+                    <td><span class="badge badge-pill badge-dark">{{ row['classification'] }}</span></td>
+                    <td>{{ row['business_category'] }}</td>
+                    <td>{{ row['contract_count'] }}</td>
+                    <td>${{ "{:,.2f}".format(row['total_awarded'] or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if vendor_total_pages > 1 %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Digital vendors pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item {% if vendor_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" {% if vendor_page> 1 %}href="{{ url_for('digital_service_reform',
+                        vendor_page=vendor_page-1, vendor_sort=vendor_sort, vendor_order=vendor_order,
+                        tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors"{% else
+                        %}href="#"
+                        tabindex="-1" aria-disabled="true"{% endif %}>Previous</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ vendor_page }} of {{ vendor_total_pages }}</span>
+                </li>
+                <li class="page-item {% if vendor_page == vendor_total_pages %}disabled{% endif %}">
+                    <a class="page-link" {% if vendor_page < vendor_total_pages %}href="{{ url_for('digital_service_reform', vendor_page=vendor_page+1, vendor_sort=vendor_sort, vendor_order=vendor_order,
+                        tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#digital-vendors" {% else
+                        %}href="#" tabindex="-1" aria-disabled="true" {% endif %}>Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- All Digital Service Contracts -->
+<div class="card mb-5 border-0 shadow-sm rounded-lg" id="all-digital-contracts">
+    <div class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">All Digital
+        Service Contracts ({{ "{:,}".format(all_contracts_count) }})</div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', all_contract_sort='vendor', all_contract_order='desc' if all_contract_sort == 'vendor' and all_contract_order == 'asc' else 'asc', vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order, tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"
+                            class="text-dark text-decoration-none">
+                            Vendor {% if all_contract_sort == 'vendor' %}{{ '↑' if all_contract_order == 'asc' else '↓'
+                            }}{% endif %}
+                        </a>
+                    </th>
+                    <th>Agency</th>
+                    <th>Contract ID</th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', all_contract_sort='date', all_contract_order='desc' if all_contract_sort == 'date' and all_contract_order == 'asc' else 'asc', vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order, tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"
+                            class="text-dark text-decoration-none">
+                            Start Date {% if all_contract_sort == 'date' %}{{ '↑' if all_contract_order == 'asc' else
+                            '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', all_contract_sort='end_date', all_contract_order='desc' if all_contract_sort == 'end_date' and all_contract_order == 'asc' else 'asc', vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order, tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"
+                            class="text-dark text-decoration-none">
+                            End Date {% if all_contract_sort == 'end_date' %}{{ '↑' if all_contract_order == 'asc' else
+                            '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', all_contract_sort='amount', all_contract_order='desc' if all_contract_sort == 'amount' and all_contract_order == 'asc' else 'asc', vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order, tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"
+                            class="text-dark text-decoration-none">
+                            Amount {% if all_contract_sort == 'amount' %}{{ '↑' if all_contract_order == 'asc' else '↓'
+                            }}{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('digital_service_reform', all_contract_sort='classification', all_contract_order='desc' if all_contract_sort == 'classification' and all_contract_order == 'asc' else 'asc', vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order, tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"
+                            class="text-dark text-decoration-none">
+                            Classification {% if all_contract_sort == 'classification' %}{{ '↑' if all_contract_order ==
+                            'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in all_contracts %}
+                <tr data-href="/contract/{{ c.ctr_id }}">
+                    <td>
+                        {% if c.matched_passport_id %}
+                        <a href="/vendor/{{ c.matched_passport_id }}">{{ c.vendor_name }}</a>
+                        {% else %}
+                        <a href="/vendors?q={{ c.vendor_name }}">{{ c.vendor_name }}</a>
+                        {% endif %}
+                    </td>
+                    <td><a href="/agency/{{ c.agency }}">{{ c.agency }}</a></td>
+                    <td>{{ c.contract_id }}</td>
+                    <td>{{ c.start_date }}</td>
+                    <td>{{ c.end_date }}</td>
+                    <td>${{ "{:,.0f}".format(c.award_amount) if c.award_amount else '0' }}</td>
+                    <td><span class="badge badge-pill badge-dark">{{ c.classification }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if all_contracts_total_pages > 1 %}
+    <div class="card-footer bg-white">
+        <nav aria-label="All digital contracts pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item {% if all_contract_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" {% if all_contract_page> 1 %}href="{{ url_for('digital_service_reform',
+                        all_contract_page=all_contract_page-1, all_contract_sort=all_contract_sort,
+                        all_contract_order=all_contract_order,
+                        vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order,
+                        tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts"{%
+                        else %}href="#"
+                        tabindex="-1" aria-disabled="true"{% endif %}>Previous</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ all_contract_page }} of {{ all_contracts_total_pages }}</span>
+                </li>
+                <li class="page-item {% if all_contract_page == all_contracts_total_pages %}disabled{% endif %}">
+                    <a class="page-link" {% if all_contract_page < all_contracts_total_pages %}href="{{ url_for('digital_service_reform', all_contract_page=all_contract_page+1, all_contract_sort=all_contract_sort, all_contract_order=all_contract_order,
+                        vendor_page=vendor_page, vendor_sort=vendor_sort, vendor_order=vendor_order,
+                        tech_page=tech_page, tech_sort=tech_sort, tech_order=tech_order) }}#all-digital-contracts" {%
+                        else %}href="#" tabindex="-1" aria-disabled="true" {% endif %}>Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+</div>
+
+<!-- Checkbook Breakdown Charts -->
+<div class="card mb-5 border-0 shadow-sm rounded-lg" id="checkbook-breakdown">
+    <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+        <span class="font-weight-bold text-uppercase small text-muted">Contract Characteristics (Checkbook NYC
+            Data)</span>
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-sm btn-outline-secondary active shadow-none" onclick="updateCharts('count')">
+                <input type="radio" name="chartMetric" checked> By Count
+            </label>
+            <label class="btn btn-sm btn-outline-secondary shadow-none" onclick="updateCharts('amount')">
+                <input type="radio" name="chartMetric"> By Value
+            </label>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <h6 class="text-center small font-weight-bold">Award Method</h6>
+                <div style="height: 250px">
+                    <canvas id="chartAwardMethod"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h6 class="text-center small font-weight-bold">Expense Category</h6>
+                <div style="height: 250px">
+                    <canvas id="chartExpense"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h6 class="text-center small font-weight-bold">Industry</h6>
+                <div style="height: 250px">
+                    <canvas id="chartIndustry"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <h6 class="text-center small font-weight-bold">Contract Type</h6>
+                <div style="height: 250px">
+                    <canvas id="chartType"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <h6 class="text-center small font-weight-bold">Vendor MWBE Category</h6>
+                <div style="height: 250px">
+                    <canvas id="chartMWBE"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Store charts and data globally
+            window.digitalCharts = {};
+            const digitalData = {{ digital_charts | tojson }};
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initCharts();
+            });
+
+            function initCharts() {
+                if (!digitalData) return;
+
+                const charts = [
+                    { id: 'chartAwardMethod', key: 'prime_contract_award_method' },
+                    { id: 'chartExpense', key: 'prime_contract_expense_category' },
+                    { id: 'chartIndustry', key: 'prime_contract_industry' },
+                    { id: 'chartType', key: 'prime_contract_type' },
+                    { id: 'chartMWBE', key: 'prime_vendor_mwbe_category' }
+                ];
+
+                const chartColors = [
+                    '#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545',
+                    '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'
+                ];
+
+                charts.forEach(c => {
+                    if (!digitalData[c.key]) return;
+
+                    const ctx = document.getElementById(c.id).getContext('2d');
+                    window.digitalCharts[c.key] = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: digitalData[c.key].labels,
+                            datasets: [{
+                                data: digitalData[c.key].counts, // Default to count
+                                backgroundColor: chartColors,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            let label = context.label || '';
+                                            if (label) label += ': ';
+                                            // Initialize formatting
+                                            return label + context.parsed.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Expose update function to global scope
+            window.updateCharts = function (metric) {
+                if (!window.digitalCharts || !digitalData) return;
+
+                for (const key in window.digitalCharts) {
+                    const chart = window.digitalCharts[key];
+                    const data = digitalData[key];
+                    if (!data) continue;
+
+                    // Update Data
+                    if (metric === 'amount') {
+                        chart.data.datasets[0].data = data.amounts;
+                    } else {
+                        chart.data.datasets[0].data = data.counts;
+                    }
+
+                    // Update Tooltip format
+                    chart.options.plugins.tooltip.callbacks.label = function (context) {
+                        let label = context.label || '';
+                        if (label) label += ': ';
+                        if (metric === 'amount') {
+                            return label + '$' + context.parsed.toLocaleString(undefined, { maximumFractionDigits: 0 });
+                        } else {
+                            return label + context.parsed.toLocaleString();
+                        }
+                    };
+
+                    chart.update();
+                }
+            };
+        </script>
+    </div>
+</div>
+
+<div class="card mb-5 border-0 shadow-sm rounded-lg" id="expiring-contracts">
+    <div class="card-header bg-white border-0 pt-4 px-4 font-weight-bold text-uppercase small text-muted">Expiring Tech
+        Contracts</div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-7">
+                <h6 class="text-center">Value of Expiring Contracts (Next 5 Years)</h6>
+                <canvas id="techTrendChart" height="200"></canvas>
+            </div>
+            <div class="col-md-5">
+                <h6 class="text-center">Expiring Value by Agency</h6>
+                <canvas id="techAgencyChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const currencyFmt = (val) => '$' + val.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+                // Trend Bar Chart
+                new Chart(document.getElementById('techTrendChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: {{ tech_charts.trend.labels | tojson }},
+                datasets: [{
+                    label: 'Total Value ($)',
+                    data: {{ tech_charts.trend.data_values | tojson }},
+                backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+                        }]
+                    },
+                options: {
+                responsive: true,
+                scales: { y: { ticks: { callback: (val) => '$' + (val / 1000000).toFixed(0) + 'M' } } },
+                plugins: { legend: { display: false } }
+            }
+                });
+
+            // Agency Pie Chart
+            new Chart(document.getElementById('techAgencyChart'), {
+                type: 'pie',
+                data: {
+                    labels: {{ tech_charts.agency.labels | tojson }},
+                datasets: [{
+                    data: {{ tech_charts.agency.data_values | tojson }},
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'
+                ]
+                        }]
+                    },
+                options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let val = context.parsed;
+                                return context.label + ': ' + currencyFmt(val);
+                            }
+                        }
+                    }
+                }
+            }
+                });
+            });
+        </script>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th style="min-width: 140px;">
+                        <a href="{{ url_for('digital_service_reform', tech_sort='date', tech_order='desc' if tech_sort == 'date' and tech_order == 'asc' else 'asc') }}#expiring-contracts"
+                            class="text-dark text-decoration-none">
+                            Expiration Date
+                            {% if tech_sort == 'date' %}
+                            <i class="fas fa-sort-{{ 'up' if tech_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                            <i class="fas fa-sort text-muted" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Vendor</th>
+                    <th>Contract ID</th>
+                    <th style="min-width: 120px;">
+                        <a href="{{ url_for('digital_service_reform', tech_sort='amount', tech_order='desc' if tech_sort == 'amount' and tech_order == 'asc' else 'asc') }}#expiring-contracts"
+                            class="text-dark text-decoration-none">
+                            Amount
+                            {% if tech_sort == 'amount' %}
+                            <i class="fas fa-sort-{{ 'up' if tech_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                            <i class="fas fa-sort text-muted" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in expiring_tech %}
+                <tr data-href="/contract/{{ c.ctr_id }}">
+                    <td class="font-weight-bold">{{ c.end_date }}</td>
+                    <td>
+                        {% if c.matched_passport_id %}
+                        <a href="/vendor/{{ c.matched_passport_id }}">{{ c.vendor_name }}</a>
+                        {% else %}
+                        <a href="/vendors?q={{ c.vendor_name }}">{{ c.vendor_name }}</a>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.contract_id }}</td>
+                    <td>${{ "{:,.0f}".format(c.award_amount) if c.award_amount else '0' }}</td>
+                    <td><span class="badge badge-pill badge-dark">{{ c.classification }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if tech_total_pages > 1 %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Expiring contracts pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item {% if tech_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" {% if tech_page> 1 %}href="{{ url_for('digital_service_reform',
+                        tech_page=tech_page-1,
+                        tech_sort=tech_sort, tech_order=tech_order) }}#expiring-contracts"{% else %}href="#"
+                        tabindex="-1" aria-disabled="true"{% endif %}>Previous</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ tech_page }} of {{ tech_total_pages }}</span>
+                </li>
+                <li class="page-item {% if tech_page == tech_total_pages %}disabled{% endif %}">
+                    <a class="page-link" {% if tech_page < tech_total_pages
+                        %}href="{{ url_for('digital_service_reform', tech_page=tech_page+1, tech_sort=tech_sort, tech_order=tech_order) }}#expiring-contracts"
+                        {% else %}href="#" tabindex="-1" aria-disabled="true" {% endif %}>Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Research Notes -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="alert alert-light border shadow-sm rounded-lg" role="alert">
+            <h5 class="alert-heading font-weight-bold mb-2">Research and Methodology Notes</h5>
+            <p class="mb-0 text-muted">
+                This analysis involves custom categorization of vendors and contracts. Special thanks to the
+                <a href="https://github.com/htownley/nyc-tech-spending" target="_blank"
+                    class="font-weight-bold text-dark">nyc-tech-spending</a>
+                project for their work on creating vendor tags and contract analysis methodologies that supported this
+                dashboard.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

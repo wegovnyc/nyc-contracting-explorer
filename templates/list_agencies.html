@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Agencies</h2>
+
+<div class="card card-body bg-light border-0 mb-4">
+    <form action="/agencies" method="get" class="row align-items-end">
+        <div class="col-md-4">
+            <label class="small font-weight-bold text-muted">Search Agencies</label>
+            <input type="text" name="q" class="form-control" placeholder="Agency Name" value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary btn-block">Search</button>
+        </div>
+    </form>
+</div>
+
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Agencies</h4>
+        <span class="badge badge-secondary">{{ count }} Records</span>
+    </div>
+    <div class="table-responsive bg-white border rounded">
+        <table class="table table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width: 40%;">
+                        <a href="{{ url_for('agencies', sort='name', order=('desc' if sort == 'name' and order == 'asc' else 'asc'), q=search_query) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Agency Name {% if sort == 'name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-center">
+                        <a href="{{ url_for('agencies', sort='count', order=('desc' if sort == 'count' and order == 'asc' else 'asc'), q=search_query) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Contracts {% if sort == 'count' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-right">
+                        <a href="{{ url_for('agencies', sort='amount', order=('desc' if sort == 'amount' and order == 'asc' else 'asc'), q=search_query) }}"
+                            class="text-decoration-none text-dark font-weight-bold">
+                            Total Value {% if sort == 'amount' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                        </a>
+                    </th>
+                    <th>Top Vendor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr data-href="/agency/{{ row['id'] }}">
+                    <td><a href="/agency/{{ row['id'] }}" class="font-weight-bold text-dark">{{ row['name'] }}</a></td>
+                    <td class="text-center">{{ row['contract_count'] }}</td>
+                    <td class="text-right">${{ "{:,.0f}".format(row['total_amount'] or 0) }}</td>
+                    <td class="small">{{ row['top_vendor'] or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

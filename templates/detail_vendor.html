@@ -1,0 +1,877 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Crunchbase-style Sticky Sidebar */
+    .sidebar-sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 2rem;
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+    }
+
+    .section-card {
+        scroll-margin-top: 6rem;
+        /* Increased to account for sticky header offset */
+    }
+
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: #f8f9fa;
+        color: #007bff;
+        border-right: 3px solid #007bff;
+        border-radius: 0;
+        font-weight: 500;
+    }
+
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 0;
+        padding: 0.5rem 1rem;
+    }
+
+    .profile-header-icon {
+        width: 64px;
+        height: 64px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #6c757d;
+        font-weight: bold;
+    }
+
+    /* Override Sidebar Active Color to Dark Blue Highlight */
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: transparent !important;
+        color: #343a40 !important;
+        font-weight: bold;
+        border: 0 !important;
+        border-left: 3px solid #343a40 !important;
+        border-radius: 0;
+        box-shadow: none !important;
+        outline: none !important;
+        padding-left: 1rem;
+        /* Adjust padding to account for border if needed */
+    }
+</style>
+
+<div class="row mb-5">
+    <!-- Header Section -->
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-3">
+            <div class="profile-header-icon mr-3"
+                style="{% if vendor.logo_url %}background-color: transparent; border: 1px solid #e9ecef;{% endif %}">
+                {% if vendor.logo_url %}
+                <img src="{{ vendor.logo_url }}" alt="{{ vendor.name }} Logo"
+                    style="max-width: 100%; max-height: 100%; border-radius: 4px;">
+                {% else %}
+                {{ vendor.name[:1] }}
+                {% endif %}
+            </div>
+            <div>
+                <h1 class="mb-1">{{ vendor.name }}</h1>
+                <div class="text-muted small">
+                    <i class="fas fa-map-marker-alt mr-1"></i>
+                    {% if entity_summary %}{{ entity_summary.city }}, {{ entity_summary.state }}{% else %}{{
+                    vendor.duns_number or 'NYC Registered Vendor' }}{% endif %}
+
+                    {% if vendor.website_url %}
+                    <span class="mx-2">•</span>
+                    <a href="{{ vendor.website_url }}" target="_blank" class="text-muted" data-toggle="tooltip"
+                        title="Official Website">
+                        {{ vendor.website_url | replace('https://', '') | replace('http://', '') | replace('www.', '')
+                        }}
+                    </a>
+                    {% endif %}
+                    {% if vendor.linkedin_url %}
+                    <span class="mx-2">•</span>
+                    <a href="{{ vendor.linkedin_url }}" target="_blank" class="text-muted" data-toggle="tooltip"
+                        title="LinkedIn Profile">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    {% endif %}
+                    {% if vendor.wikipedia_url %}
+                    <span class="mx-2">•</span>
+                    <a href="{{ vendor.wikipedia_url }}" target="_blank" class="text-muted" data-toggle="tooltip"
+                        title="Wikipedia Entry">
+                        <i class="fab fa-wikipedia-w"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if tech_spending %}
+                    <span class="mx-2">•</span>
+                    <span class="badge badge-light border text-dark" data-toggle="tooltip"
+                        title="See Research Notes for source information for this tag.">
+                        {{ tech_spending.classification }} Vendor <i class="fas fa-info-circle ml-1 text-muted"></i>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="ml-auto text-right">
+                <div class="mb-2">
+                    {% if entity_summary and entity_summary.symbol %}
+                    <span class="badge badge-success">{{ entity_summary.symbol }} (Public)</span>
+                    {% endif %}
+                </div>
+                <!-- Future: Social Links from Clay -->
+                <!-- <a href="#" class="text-muted mr-2"><i class="fab fa-linkedin fa-lg"></i></a> -->
+                <!-- <a href="#" class="text-muted"><i class="fas fa-globe fa-lg"></i></a> -->
+            </div>
+        </div>
+
+        <!-- Key Highlights Bar -->
+        <div class="card card-body bg-light border-0 py-3 mb-4">
+            <div class="row text-center divide-cols">
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Total Awarded</div>
+                    <div class="h4 mb-0 text-dark">${{ "{:,.0f}".format(stats.total_awarded) }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Contracts</div>
+                    <div class="h4 mb-0 text-dark">{{ stats.contract_count }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">Business Type</div>
+                    <div class="h5 mb-0 text-dark pt-1">{{ vendor.business_category }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase font-weight-bold">PASSPort ID</div>
+                    <div class="h5 mb-0 text-dark pt-1">{{ vendor.passport_supplier_id }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-md-3 d-none d-md-block">
+        <nav class="sidebar-sticky">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                <span>Contents</span>
+            </h6>
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <a class="nav-link active" href="#section-overview">Overview</a>
+                {% if tech_spending or chart_data %}<a class="nav-link" href="#section-insights">Insights &
+                    Spending</a>{% endif %}
+                <a class="nav-link" href="#section-contracts">Active Contracts <span
+                        class="badge badge-light float-right small">{{ contracts|length }}</span></a>
+                {% if evaluations %}<a class="nav-link" href="#section-evaluations">Performance Evals</a>{% endif %}
+                {% if mocs_entity %}<a class="nav-link" href="#section-people">People & Structure</a>{% endif %}
+                {% if opencorp %}<a class="nav-link" href="#section-legal">Legal Entity</a>{% endif %}
+                <a class="nav-link" href="#section-transactions">Transactions</a>
+                {% if tech_spending %}<a class="nav-link" href="#section-notes">Research Notes</a>{% endif %}
+            </div>
+
+            <hr>
+            <div class="px-3 small text-muted">
+                Data updated: {{ current_date }}<br>
+                Source: MOCS, Checkbook NYC
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+
+        <!-- Overview Section -->
+        <div id="section-overview" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Overview</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source File: vendor_data.csv">Source: MOCS</span>
+            </div>
+
+            <div class="card border-left-primary shadow-sm h-100" style="border-left: 4px solid #007bff !important;">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <!-- Description removed as requested -->
+
+                        {% if entity_summary %}
+                        <dt class="col-sm-3 mt-3">Headquarters</dt>
+                        <dd class="col-sm-9 mt-3">
+                            {{ entity_summary.address1 }}<br>
+                            {% if entity_summary.address2 %}{{ entity_summary.address2 }}<br>{% endif %}
+                            {{ entity_summary.city }}, {{ entity_summary.state }} {{ entity_summary.zip }}<br>
+                            {{ entity_summary.country }}
+                        </dd>
+
+                        {% if entity_summary.telephone %}
+                        <dt class="col-sm-3">Phone</dt>
+                        <dd class="col-sm-9">{{ entity_summary.telephone }}</dd>
+                        {% endif %}
+
+                        {% if entity_summary.revenue %}
+                        <dt class="col-sm-3">Revenue Range</dt>
+                        <dd class="col-sm-9">{{ entity_summary.revenue }}</dd>
+                        {% endif %}
+                        {% endif %}
+
+                        <dt class="col-sm-3">Certifications</dt>
+                        <dd class="col-sm-9">{{ vendor.certification_type or 'None Listed' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        {% if tech_spending or chart_data %}
+        <div id="section-insights" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Insights & Spending Trends</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source File: checkbook_nyc_contracts.parquet (S3 Archive)">Source: Checkbook NYC</span>
+            </div>
+            <div class="card border-left-warning shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                <div class="card-body">
+                    <!-- Alert removed as requested -->
+
+                    {% if chart_data and chart_data.labels %}
+                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Contract Awards History</h6>
+                    <div style="height: 250px;">
+                        <canvas id="awardsChart"></canvas>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Contracts Section -->
+        <div id="section-contracts" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <h4 class="mb-0 mr-3">Contracts</h4>
+                    <span class="badge badge-secondary badge-pill">{{ contracts|length }}</span>
+                </div>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip" <span
+                    class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source Files: contracts_data.csv & Checkbook NYC">Source: MOCS & Checkbook NYC</span>
+            </div>
+
+            <div class="card border-left-primary shadow-sm" style="border-left: 4px solid #007bff !important;">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="contractsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 0)">Contract ID <i
+                                        class="fas fa-sort text-muted ml-1 small"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 1)">Agency <i
+                                        class="fas fa-sort text-muted ml-1 small"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 2)"
+                                    class="text-right">
+                                    Amount <i class="fas fa-sort text-muted ml-1 small"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 3)"
+                                    class="text-right">Start
+                                    Date <i class="fas fa-sort text-muted ml-1 small"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 4)"
+                                    class="text-right">End
+                                    Date <i class="fas fa-sort text-muted ml-1 small"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable('contractsTable', 5)">Source <i
+                                        class="fas fa-sort text-muted ml-1 small"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contracts %}
+                            <tr style="transform: rotate(0);">
+                                <td><a href="/contract/{{ c.ctr_id }}"
+                                        class="stretched-link font-weight-bold text-dark">{{
+                                        c.contract_id }}</a></td>
+                                <td><a href="/agency/{{ c.agency_id }}" style="position: relative; z-index: 2;">{{
+                                        c.agency }}</a></td>
+                                <td class="text-right">${{ "{:,}".format(c.award_amount|int) }}</td>
+                                <td class="text-right text-muted small">
+                                    {% if c.start_date %}
+                                    {% if '-' in c.start_date and c.start_date|length >= 10 %}
+                                    {{ c.start_date[5:7] }}/{{ c.start_date[8:10] }}/{{ c.start_date[:4] }}
+                                    {% else %}
+                                    {{ c.start_date }}
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td class="text-right text-muted small">
+                                    {% if c.end_date %}
+                                    {% if '-' in c.end_date and c.end_date|length >= 10 %}
+                                    {{ c.end_date[5:7] }}/{{ c.end_date[8:10] }}/{{ c.end_date[:4] }}
+                                    {% else %}
+                                    {{ c.end_date }}
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if 'MOCS' in c.source and 'Checkbook' in c.source %}
+                                    <span class="badge badge-info">MOCS & Checkbook NYC</span>
+                                    {% elif 'MOCS' in c.source %}
+                                    <span class="badge badge-primary">MOCS</span>
+                                    {% elif 'Checkbook' in c.source %}
+                                    <span class="badge badge-warning">Checkbook NYC</span>
+                                    {% else %}
+                                    <span class="badge badge-light border">{{ c.source }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No contracts found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-top-0 pt-3 pb-2">
+                    <nav aria-label="Contracts pagination">
+                        <ul class="pagination pagination-sm justify-content-center mb-0" id="contractsTable-pagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluations Section -->
+        {% if evaluations %}
+        <div id="section-evaluations" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Performance Evaluations</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip" <span
+                    class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source File: passport_performance_evaluation.csv">Source: MOCS</span>
+            </div>
+            <div class="card border-left-primary shadow-sm" style="border-left: 4px solid #007bff !important;">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0" id="evaluationsTable">
+                        <thead>
+                            <tr>
+                                <th>Rating</th>
+                                <th>Agency</th>
+                                <th>Date</th>
+                                <th>Period</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in evaluations %}
+                            <tr>
+                                <td>
+                                    {% if e.rating == 'Excellent' or e.rating == 'Good' %}
+                                    <span class="text-success font-weight-bold">{{ e.rating }}</span>
+                                    {% elif e.rating == 'Poor' or e.rating == 'Unsatisfactory' %}
+                                    <span class="text-danger font-weight-bold">{{ e.rating }}</span>
+                                    {% else %}
+                                    {{ e.rating }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ e.agency }}</td>
+                                <td>{{ e.eval_date[5:7] }}/{{ e.eval_date[8:10] }}/{{ e.eval_date[:4] }}</td>
+                                <td class="small text-muted">{{ e.start_date[:10] }} - {{ e.end_date[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-top-0 pt-3 pb-2">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0"
+                            id="evaluationsTable-pagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- People Section -->
+        {% if mocs_entity or mocs_people or principals %}
+        <div id="section-people" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">People & Structure</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip" <span
+                    class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source File: doing_business_people.csv">Source: MOCS</span>
+            </div>
+
+            <div class="row">
+                {% if mocs_people %}
+                <div class="col-12 mb-3">
+                    <div class="card border-left-primary shadow-sm" style="border-left: 4px solid #007bff !important;">
+                        <div class="card-header bg-white font-weight-bold border-bottom-0">Principals & Officers (MOCS)
+                        </div>
+                        <ul class="list-group list-group-flush" id="mocsPeopleList">
+                            {% for p in mocs_people %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                                <div>
+                                    <h6 class="mb-0">{{ p.first_name }} {{ p.last_name }}</h6>
+                                </div>
+                                <span class="badge badge-light border">{{ p.relationship_code }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% if mocs_people|length > 10 %}
+                        <div class="card-footer bg-white border-top-0 pt-2 pb-2">
+                            <nav>
+                                <ul class="pagination pagination-sm justify-content-center mb-0"
+                                    id="mocsPeopleList-pagination"></ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if principals %}
+                <div class="col-12">
+                    <div class="card border-left-primary shadow-sm" style="border-left: 4px solid #007bff !important;">
+                        <div class="card-header bg-white font-weight-bold border-bottom-0">Reported Principals</div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0" id="principalsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="pl-4">Name</th>
+                                        <th>Title</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in principals %}
+                                    <tr>
+                                        <td class="pl-4">{{ p.principal_name }}</td>
+                                        <td>{{ p.title }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if principals|length > 10 %}
+                        <div class="card-footer bg-white border-top-0 pt-2 pb-2">
+                            <nav>
+                                <ul class="pagination pagination-sm justify-content-center mb-0"
+                                    id="principalsTable-pagination"></ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Legal Section -->
+        {% if opencorp %}
+        <div id="section-legal" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Legal Entity Details</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip" <span
+                    class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source: OpenCorporates API">Source: OpenCorporates</span>
+            </div>
+
+            <div class="card border-left-success shadow-sm" style="border-left: 44px solid #28a745 !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-check-circle text-success mr-2 fa-lg"></i>
+                        <h5 class="mb-0">Matched Legal Entity</h5>
+                    </div>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Legal Name</dt>
+                        <dd class="col-sm-9 font-weight-bold">{{ opencorp.vendor_name }}</dd>
+
+                        <dt class="col-sm-3">Jurisdiction</dt>
+                        <dd class="col-sm-9">{{ opencorp.jurisdiction_code }} ({{ opencorp.company_number }})</dd>
+
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">{{ opencorp.status }}</dd>
+
+                        <dt class="col-sm-3">Incorporated</dt>
+                        <dd class="col-sm-9">{{ opencorp.incorporation_date }}</dd>
+                    </dl>
+                    <div class="mt-3">
+                        <a href="{{ opencorp.opencorporates_url }}" target="_blank"
+                            class="btn btn-sm btn-outline-success">View Full Legal Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Transactions Section (Lazy Loaded) -->
+        <div id="section-transactions" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Spending Transactions</h4>
+                <span class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip" <span
+                    class="badge badge-white border text-secondary font-weight-normal" data-toggle="tooltip"
+                    title="Source File: checkbook_nyc_contracts.parquet (S3 Archive)">Source: Checkbook NYC</span>
+            </div>
+
+            <div class="card border-left-warning shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                <div class="card-body p-0" id="transactions-content">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading transactions...</span>
+                        </div>
+                        <p class="text-muted mt-2">Loading transactions from S3 archive...</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0 pt-2 pb-2">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0"
+                            id="transactionsTable-pagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Research Notes Section (Restored) -->
+        {% if tech_spending %}
+        <div id="section-notes" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Research Notes</h4>
+                <!-- Source badge removed as requested -->
+            </div>
+
+            <div class="card border-left-info shadow-sm" style="border-left: 4px solid #17a2b8 !important;">
+                <div class="card-body">
+                    <div class="accordion" id="researchNotesAccordion">
+                        <div class="card mb-0 border-light">
+                            <div class="card-header bg-light text-dark p-0" id="headingResearchNotes">
+                                <h5 class="mb-0">
+                                    <button
+                                        class="btn btn-link btn-block text-left text-dark font-weight-bold text-decoration-none px-3 py-2 d-flex justify-content-between align-items-center shadow-none"
+                                        type="button" data-toggle="collapse" data-target="#collapseResearchNotes"
+                                        aria-expanded="true" aria-controls="collapseResearchNotes">
+                                        NYC Digital Services Spending Analysis
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </h5>
+                            </div>
+
+                            <div id="collapseResearchNotes" class="collapse show" aria-labelledby="headingResearchNotes"
+                                data-parent="#researchNotesAccordion">
+                                <div class="card-body">
+                                    <p class="mb-3">
+                                        <strong>Source:</strong> <a href="https://github.com/htownley/nyc-tech-spending"
+                                            target="_blank">https://github.com/htownley/nyc-tech-spending</a>
+                                    </p>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <dl class="row mb-0">
+                                                <dt class="col-sm-4 col-md-3">Classification</dt>
+                                                <dd class="col-sm-8 col-md-9"><span
+                                                        class="badge badge-pill badge-dark">{{
+                                                        tech_spending.classification }} Vendor</span></dd>
+
+                                                <dt class="col-sm-4 col-md-3">Description</dt>
+                                                <dd class="col-sm-8 col-md-9">{{ tech_spending.description }}</dd>
+
+                                                <dt class="col-sm-4 col-md-3">FY2025 Spending</dt>
+                                                <dd class="col-sm-8 col-md-9 font-weight-bold">${{
+                                                    "{:,.0f}".format(tech_spending.fy2025) }}</dd>
+
+                                                <dt class="col-sm-4 col-md-3">Total Transactions</dt>
+                                                <dd class="col-sm-8 col-md-9">{{ tech_spending.num_contracts }}</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4">
+                                    {% if tech_chart and tech_chart.labels %}
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Calculated
+                                                Tech Spending Trend</h6>
+                                            <div style="height: 200px;">
+                                                <canvas id="techTrendChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Trend Chart Script -->
+        {% if tech_chart and tech_chart.labels %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const ctxTech = document.getElementById('techTrendChart').getContext('2d');
+                new Chart(ctxTech, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ tech_chart.labels | tojson }},
+                datasets: [{
+                    label: 'Calculated Tech Spending ($)',
+                    data: {{ tech_chart.data_values | tojson }},
+                backgroundColor: 'rgba(23, 162, 184, 0.6)',
+                borderRadius: 4
+                        }]
+                    },
+                options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { drawBorder: false },
+                        ticks: { callback: (val) => '$' + (val / 1000000).toFixed(1) + 'M' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+                });
+            });
+        </script>
+        {% endif %}
+        {% endif %}
+
+
+    </div>
+</div>
+
+<!-- Chart Scripts -->
+{% if chart_data and chart_data.labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('awardsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_data.labels | tojson }},
+        datasets: [{
+            label: 'Total Awarded ($)',
+            data: {{ chart_data.amounts | tojson }},
+        backgroundColor: '#007bff',
+        borderRadius: 4
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { drawBorder: false },
+                ticks: { callback: (val) => '$' + (val / 1000000).toFixed(1) + 'M' }
+            },
+            x: { grid: { display: false } }
+        }
+    }
+        });
+    });
+</script>
+{% endif %}
+
+<script>
+    // Global state for pagination to support external sorting
+    window.paginationState = {};
+
+    function initPagination(targetId, perPage = 10) {
+        const container = document.getElementById(targetId);
+        if (!container) return; // Table/List not found
+
+        // Support both tables (tbody rows) and lists (li items)
+        let items = [];
+        if (container.tagName === 'TABLE') {
+            items = Array.from(container.getElementsByTagName('tbody')[0].getElementsByTagName('tr'));
+        } else if (container.tagName === 'UL') {
+            items = Array.from(container.getElementsByTagName('li')); // Convert to Array for Sort
+        }
+
+        // Initialize State
+        const state = {
+            targetId: targetId,
+            perPage: perPage,
+            currentPage: 1,
+            items: items, // Store REFERENCES to DOM elements
+            totalPages: Math.ceil(items.length / perPage),
+            container: container,
+            sortDir: 'asc'
+        };
+
+        // Define showPage function bound to this state
+        state.showPage = function (page) {
+            this.currentPage = page;
+            const start = (page - 1) * this.perPage;
+            const end = start + this.perPage;
+
+            // We iterate through ALL items in the state array
+            // and append them to parent in correct order, setting display
+            // This handles sorting + pagination
+
+            const parent = (this.container.tagName === 'TABLE') ? this.container.getElementsByTagName('tbody')[0] : this.container;
+
+            // Clear parent - verify if this is safe (yes if we have references)
+            // Actually safer to just loop and set display if order didn't change, 
+            // BUT sort DOES change order. So re-appending is necessary.
+
+            // First, hide everything
+            this.items.forEach(item => item.style.setProperty('display', 'none', 'important'));
+
+            // Re-append in order (this physically sorts the DOM)
+            this.items.forEach(item => parent.appendChild(item));
+
+            // Show current page
+            for (let i = start; i < end && i < this.items.length; i++) {
+                this.items[i].style.removeProperty('display');
+            }
+
+            updateButtons(this, page);
+        };
+
+        window.paginationState[targetId] = state;
+
+        if (items.length <= perPage) {
+            // Ensure all visible if no pagination needed
+            items.forEach(item => item.style.removeProperty('display'));
+            const pageCont = document.getElementById(targetId + '-pagination');
+            if (pageCont) pageCont.innerHTML = '';
+            return;
+        }
+
+        state.showPage(1);
+    }
+
+    function updateButtons(state, page) {
+        const paginationContainer = document.getElementById(state.targetId + '-pagination');
+        if (!paginationContainer) return;
+
+        paginationContainer.innerHTML = '';
+
+        const createButton = (text, p, isActive = false, isDisabled = false) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = 'javascript:void(0)';
+            a.innerHTML = text;
+            if (!isDisabled) {
+                a.onclick = function () { state.showPage(p); };
+            }
+            li.appendChild(a);
+            return li;
+        };
+
+        // Prev
+        paginationContainer.appendChild(createButton('&laquo;', page - 1, false, page === 1));
+
+        let startPage = Math.max(1, page - 2);
+        let endPage = Math.min(state.totalPages, page + 2);
+
+        if (startPage > 1) {
+            paginationContainer.appendChild(createButton('1', 1, false, false));
+            if (startPage > 2) paginationContainer.appendChild(createButton('...', 1, false, true));
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationContainer.appendChild(createButton(i, i, i === page, false));
+        }
+
+        if (endPage < state.totalPages) {
+            if (endPage < state.totalPages - 1) paginationContainer.appendChild(createButton('...', state.totalPages, false, true));
+            paginationContainer.appendChild(createButton(state.totalPages, state.totalPages, false, false));
+        }
+
+        // Next
+        paginationContainer.appendChild(createButton('&raquo;', page + 1, false, page === state.totalPages));
+    }
+
+    // Client-Side Sorting
+    function sortTable(tableId, n) {
+        const state = window.paginationState[tableId];
+        if (!state) return;
+
+        // Toggle direction
+        state.sortDir = (state.sortDir === 'asc') ? 'desc' : 'asc';
+        const dir = state.sortDir;
+
+        state.items.sort((rowA, rowB) => {
+            const cellA = rowA.getElementsByTagName("TD")[n];
+            const cellB = rowB.getElementsByTagName("TD")[n];
+
+            let valA = cellA.innerText || cellA.textContent;
+            let valB = cellB.innerText || cellB.textContent;
+
+            // Clean spaces
+            valA = valA.trim().toLowerCase();
+            valB = valB.trim().toLowerCase();
+
+            // Helper to parse date
+            function parseDate(str) {
+                if (!str) return -Infinity;
+                // Matches MM/DD/YYYY or YYYY-MM-DD
+                if (str.match(/^\d{2}\/\d{2}\/\d{4}$/) || str.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    return Date.parse(str);
+                }
+                return NaN;
+            }
+
+            const dateA = parseDate(valA);
+            const dateB = parseDate(valB);
+
+            if (!isNaN(dateA) && !isNaN(dateB)) {
+                return (dir === 'asc') ? dateA - dateB : dateB - dateA;
+            }
+
+            // Check numeric (currency)
+            const numA = parseFloat(valA.replace(/[^0-9.-]+/g, ""));
+            const numB = parseFloat(valB.replace(/[^0-9.-]+/g, ""));
+
+            const isNumeric = !isNaN(numA) && !isNaN(numB) && (valA.includes('$') || valA.match(/^\d/));
+
+            if (isNumeric) {
+                return (dir === 'asc') ? numA - numB : numB - numA;
+            } else {
+                if (valA < valB) return (dir === 'asc') ? -1 : 1;
+                if (valA > valB) return (dir === 'asc') ? 1 : -1;
+                return 0;
+            }
+        });
+
+        // Re-render
+        state.showPage(1);
+    }
+
+    // Lazy Load Transactions
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize tooltips (global)
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Init pagination for static tables
+        initPagination('contractsTable', 10);
+        initPagination('evaluationsTable', 10);
+        initPagination('mocsPeopleList', 10);
+        initPagination('principalsTable', 10);
+
+        // Fetch transactions content
+        const vendorId = "{{ vendor.passport_supplier_id }}";
+        const contentDiv = document.getElementById('transactions-content');
+
+        fetch(`/vendor/${vendorId}/transactions`)
+            .then(response => response.text())
+            .then(html => {
+                contentDiv.innerHTML = html;
+
+                // Check if the loaded content contains a table we can paginate
+                // The returned HTML is likely just a table or div. 
+                // We'll wrap the table in an ID if it doesn't have one, or just assume the first table.
+                const table = contentDiv.querySelector('table');
+                if (table) {
+                    table.id = 'transactionsTable';
+                    // We need to move the pagination container logic or reuse the existing one
+                    // The 'transactionsTable-pagination' container is already in the DOM outside the lazy load area.
+                    initPagination('transactionsTable', 10);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading transactions:', error);
+                contentDiv.innerHTML = '<p class="text-danger text-center py-4">Error loading transactions. Please try refreshing.</p>';
+            });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Crunchbase-style Sticky Sidebar */
+    .sidebar-sticky {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 2rem;
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+    }
+
+    .section-card {
+        scroll-margin-top: 6rem;
+    }
+
+    /* Override Sidebar Active Color to Dark Blue Highlight */
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: transparent !important;
+        color: #343a40 !important;
+        font-weight: bold;
+        border: 0 !important;
+        border-left: 3px solid #343a40 !important;
+        border-radius: 0;
+        box-shadow: none !important;
+        outline: none !important;
+        padding-left: 1rem;
+    }
+
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 0;
+        padding: 0.5rem 1rem;
+    }
+
+    .profile-header-icon {
+        width: 64px;
+        height: 64px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #6c757d;
+        font-weight: bold;
+    }
+</style>
+
+<div class="row mb-5">
+    <!-- Header Section -->
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-3">
+            <div class="profile-header-icon mr-3">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+                <h1 class="mb-1">{{ solicitation.epin }}</h1>
+                <div class="text-muted small">
+                    <span class="badge badge-light border text-dark">
+                        Solicitation <i class="fas fa-search ml-1 text-muted"></i>
+                    </span>
+                    <span class="mx-2">•</span>
+                    {% if solicitation.rfx_status %}
+                    <span class="badge badge-info">{{ solicitation.rfx_status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Highlights Bar -->
+        <div class="card card-body bg-light border-0 py-3 mb-4">
+            <div class="row text-center divide-cols">
+                <div class="col-md-4">
+                    <div class="small text-muted text-uppercase font-weight-bold">Resulting Contracts</div>
+                    <div class="h4 mb-0 text-dark">{{ contracts|length }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted text-uppercase font-weight-bold">Total Awarded</div>
+                    <div class="h4 mb-0 text-dark">${{ "{:,.0f}".format(contracts|sum(attribute='award_amount') or 0) }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted text-uppercase font-weight-bold">Due Date</div>
+                    <div class="h5 mb-0 text-dark pt-1">{% if solicitation.due_date and solicitation.due_date|length >=
+                        10 %}{{ solicitation.due_date[5:7] }}/{{ solicitation.due_date[8:10] }}/{{
+                        solicitation.due_date[:4] }}{% else %}{{ solicitation.due_date }}{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-md-3 d-none d-md-block">
+        <div class="sidebar-sticky">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-2 text-muted">
+                <span>Contents</span>
+            </h6>
+            <ul class="nav flex-column nav-pills" id="profile-scroll-spy">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#details">Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#contracts">Resulting Contracts</a>
+                </li>
+                {% if crol_records %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#crol">CROL Notices</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9" data-spy="scroll" data-target="#profile-scroll-spy" data-offset="100">
+
+        <!-- Details Section -->
+        <div id="details" class="section-card mb-5">
+            <h4 class="mb-4">Details</h4>
+            <div class="card bg-white border h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ solicitation.procurement_name }}</h5>
+                    <hr>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-muted">Agency</dt>
+                        <dd class="col-sm-9"><a href="/agency/{{ solicitation.agency_id }}">{{ solicitation.agency
+                                }}</a></dd>
+
+                        <dt class="col-sm-3 text-muted">Status</dt>
+                        <dd class="col-sm-9">{{ solicitation.rfx_status }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Due Date</dt>
+                        <dd class="col-sm-9">{% if solicitation.due_date and solicitation.due_date|length >= 10 %}{{
+                            solicitation.due_date[5:7] }}/{{ solicitation.due_date[8:10] }}/{{ solicitation.due_date[:4]
+                            }}{% else %}{{ solicitation.due_date }}{% endif %}</dd>
+
+                        <dt class="col-sm-3 text-muted">Industry</dt>
+                        <dd class="col-sm-9">{{ solicitation.industry }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Method</dt>
+                        <dd class="col-sm-9">{{ solicitation.procurement_method }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Summary</dt>
+                        <dd class="col-sm-9 small text-muted">
+                            {{ solicitation.procurement_summary }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <hr class="my-5">
+
+        <!-- Contracts Section -->
+        <div id="contracts" class="section-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Resulting Contracts</h4>
+                <span class="badge badge-secondary">{{ contracts|length }}</span>
+            </div>
+            {% if contracts %}
+            <div class="table-responsive bg-white border rounded">
+                <table class="table table-hover mb-0" id="contractsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th onclick="sortTable('contractsTable', 0)">ID <i class="fas fa-sort small text-muted"></i>
+                            </th>
+                            <th onclick="sortTable('contractsTable', 1)">Title <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('contractsTable', 2)">Vendor <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                            <th onclick="sortTable('contractsTable', 3)">Amount <i
+                                    class="fas fa-sort small text-muted"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in contracts %}
+                        <tr data-href="/contract/{{ c.ctr_id }}">
+                            <td><a href="/contract/{{ c.ctr_id }}" class="font-weight-bold text-dark">{{ c.contract_id
+                                    }}</a></td>
+                            <td class="text-truncate" style="max-width: 300px;" title="{{ c.contract_title }}">{{
+                                c.contract_title }}</td>
+                            <td>{{ c.vendor_name }}</td>
+                            <td class="font-weight-bold">${{ "{:,.0f}".format(c.award_amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <nav aria-label="Contracts pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center" id="contractsTable-pagination"></ul>
+            </nav>
+            {% else %}
+            <div class="alert alert-light border">No contracts found linked to this EPIN.</div>
+            {% endif %}
+        </div>
+        <hr class="my-5">
+
+        {% if crol_records %}
+        <!-- CROL Section -->
+        <div id="crol" class="section-card mb-5">
+            <h4 class="mb-4">City Record Online (CROL) Records</h4>
+            <div class="card bg-white border">
+                <div class="card-body p-0">
+                    {% for crol in crol_records %}
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title mb-1 text-primary">{{ crol.ShortTitle }}</h5>
+                            <span class="badge badge-light">{{ crol.TypeOfNoticeDescription }}</span>
+                        </div>
+                        <h6 class="card-subtitle mb-2 text-muted small">{{ crol.SectionName }} - {{ crol.AgencyName }}
+                        </h6>
+                        <div class="row small mt-2">
+                            <div class="col-md-3"><strong>Start:</strong> {% if crol.StartDate and crol.StartDate|length
+                                >= 10 %}{{ crol.StartDate[5:7] }}/{{ crol.StartDate[8:10] }}/{{ crol.StartDate[:4] }}{%
+                                else %}{{ crol.StartDate }}{% endif %}</div>
+                            <div class="col-md-3"><strong>End:</strong> {% if crol.EndDate and crol.EndDate|length >= 10
+                                %}{{ crol.EndDate[5:7] }}/{{ crol.EndDate[8:10] }}/{{ crol.EndDate[:4] }}{% else %}{{
+                                crol.EndDate }}{% endif %}</div>
+                        </div>
+                        {% if crol.AdditionalDescription1 %}
+                        <div class="mt-2 small text-muted bg-light p-2 rounded">
+                            {{ crol.AdditionalDescription1 | safe }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    // Universal Pagination & Sorting (Copied from Vendor Profile)
+    window.paginationState = {};
+
+    function initPagination(targetId, perPage = 10) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+
+        let items = Array.from(container.getElementsByTagName('tbody')[0].getElementsByTagName('tr'));
+
+        const state = {
+            targetId: targetId,
+            perPage: perPage,
+            currentPage: 1,
+            items: items,
+            totalPages: Math.ceil(items.length / perPage),
+            container: container,
+            sortDir: 'asc'
+        };
+
+        state.showPage = function (page) {
+            this.currentPage = page;
+            const start = (page - 1) * this.perPage;
+            const end = start + this.perPage;
+            const parent = this.container.getElementsByTagName('tbody')[0];
+
+            this.items.forEach(item => item.style.setProperty('display', 'none', 'important'));
+            this.items.forEach(item => parent.appendChild(item)); // Re-order DOM
+
+            for (let i = start; i < end && i < this.items.length; i++) {
+                this.items[i].style.removeProperty('display');
+            }
+            updateButtons(this, page);
+        };
+
+        window.paginationState[targetId] = state;
+        if (items.length <= perPage) {
+            items.forEach(item => item.style.removeProperty('display'));
+            return;
+        }
+        state.showPage(1);
+    }
+
+    function updateButtons(state, page) {
+        const cont = document.getElementById(state.targetId + '-pagination');
+        if (!cont) return;
+        cont.innerHTML = '';
+
+        const createButton = (text, p, isActive, isDisabled) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = 'javascript:void(0)';
+            a.innerHTML = text;
+            if (!isDisabled) a.onclick = () => state.showPage(p);
+            li.appendChild(a);
+            return li;
+        };
+
+        cont.appendChild(createButton('&laquo;', page - 1, false, page === 1));
+
+        let start = Math.max(1, page - 2), end = Math.min(state.totalPages, page + 2);
+        if (start > 1) {
+            cont.appendChild(createButton('1', 1, false, false));
+            if (start > 2) cont.appendChild(createButton('...', 1, false, true));
+        }
+        for (let i = start; i <= end; i++) cont.appendChild(createButton(i, i, i === page, false));
+        if (end < state.totalPages) {
+            if (end < state.totalPages - 1) cont.appendChild(createButton('...', state.totalPages, false, true));
+            cont.appendChild(createButton(state.totalPages, state.totalPages, false, false));
+        }
+        cont.appendChild(createButton('&raquo;', page + 1, false, page === state.totalPages));
+    }
+
+    function sortTable(tableId, n) {
+        const state = window.paginationState[tableId];
+        if (!state) return;
+
+        state.sortDir = (state.sortDir === 'asc') ? 'desc' : 'asc';
+        const dir = state.sortDir;
+
+        state.items.sort((a, b) => {
+            const cellA = a.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+            const cellB = b.getElementsByTagName("td")[n].innerText.trim().toLowerCase();
+
+            const numA = parseFloat(cellA.replace(/[^0-9.-]+/g, ""));
+            const numB = parseFloat(cellB.replace(/[^0-9.-]+/g, ""));
+            const isNum = !isNaN(numA) && !isNaN(numB) && (cellA.includes('$') || cellA.match(/^\d/));
+
+            if (isNum) return (dir === 'asc') ? numA - numB : numB - numA;
+            if (cellA < cellB) return (dir === 'asc') ? -1 : 1;
+            if (cellA > cellB) return (dir === 'asc') ? 1 : -1;
+            return 0;
+        });
+        state.showPage(1);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Fix ScrollSpy
+        $('body').scrollspy({ target: '#profile-scroll-spy', offset: 100 });
+
+        if (document.getElementById('contractsTable')) {
+            initPagination('contractsTable', 10);
+        }
+    });
+</script>
+{% endblock %}
