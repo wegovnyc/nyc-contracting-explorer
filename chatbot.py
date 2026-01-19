@@ -349,6 +349,10 @@ Available chart types:
 You are embedded on oce.wegov.nyc and help users explore NYC government procurement data."""
 
 
+# Custom error message for quota exceeded
+QUOTA_ERROR_MESSAGE = "The AI assistant has reached its daily usage limit. You can continue exploring our data with your own AI assistant by following these instructions: https://wegovnyc.github.io/nyc-contracting-explorer/claude-desktop-setup"
+
+
 def chat(message: str, history: list = None) -> str:
     """
     Process a chat message and return a response.
@@ -360,7 +364,11 @@ def chat(message: str, history: list = None) -> str:
     Returns:
         Assistant's response
     """
-    client = get_client()
+    try:
+        client = get_client()
+    except Exception as e:
+        return QUOTA_ERROR_MESSAGE
+    
     tools = get_tools()
     
     # Build conversation contents
@@ -381,14 +389,20 @@ def chat(message: str, history: list = None) -> str:
     ))
     
     # Generate response
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=contents,
-        config=types.GenerateContentConfig(
-            tools=tools,
-            system_instruction=SYSTEM_PROMPT
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                tools=tools,
+                system_instruction=SYSTEM_PROMPT
+            )
         )
-    )
+    except Exception as e:
+        error_str = str(e).lower()
+        if 'quota' in error_str or 'resource' in error_str or 'exhausted' in error_str or '429' in error_str:
+            return QUOTA_ERROR_MESSAGE
+        raise  # Re-raise other errors
     
     # Check for function calls
     max_iterations = 5  # Prevent infinite loops
@@ -421,14 +435,20 @@ def chat(message: str, history: list = None) -> str:
             ))
             
             # Get next response
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    tools=tools,
-                    system_instruction=SYSTEM_PROMPT
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        tools=tools,
+                        system_instruction=SYSTEM_PROMPT
+                    )
                 )
-            )
+            except Exception as e:
+                error_str = str(e).lower()
+                if 'quota' in error_str or 'resource' in error_str or 'exhausted' in error_str or '429' in error_str:
+                    return QUOTA_ERROR_MESSAGE
+                raise
         else:
             # Text response - we're done
             return part.text
