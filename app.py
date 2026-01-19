@@ -1216,9 +1216,9 @@ def contracts():
         where_clauses.append("industry = ?")
         params.append(industry_filter)
     
-    # Connected to Solicitations filter - use prefix match since contract EPINs have suffixes
+    # Connected to Solicitations filter - use indexed base_epin for fast matching
     if connected_filter == 'solicitations':
-        where_clauses.append("EXISTS (SELECT 1 FROM solicitations s WHERE contracts.normalized_epin LIKE s.normalized_epin || '%')")
+        where_clauses.append("base_epin IN (SELECT DISTINCT normalized_epin FROM solicitations WHERE normalized_epin IS NOT NULL)")
         
     where_str = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         
@@ -1566,9 +1566,9 @@ def solicitations():
         where_clauses.append("industry = ?")
         params.append(industry_filter)
     
-    # Connected to Contracts filter - use prefix match since contract EPINs have suffixes
+    # Connected to Contracts filter - use indexed base_epin for fast matching
     if connected_filter == 'contracts':
-        where_clauses.append("EXISTS (SELECT 1 FROM contracts c WHERE c.normalized_epin LIKE solicitations.normalized_epin || '%')")
+        where_clauses.append("normalized_epin IN (SELECT DISTINCT base_epin FROM contracts WHERE base_epin IS NOT NULL)")
         
     where_str = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         
