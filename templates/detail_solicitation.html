@@ -84,9 +84,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="small text-muted text-uppercase font-weight-bold">Due Date</div>
-                    <div class="h5 mb-0 text-dark pt-1">{% if solicitation.due_date and solicitation.due_date|length >=
-                        10 %}{{ solicitation.due_date[5:7] }}/{{ solicitation.due_date[8:10] }}/{{
-                        solicitation.due_date[:4] }}{% else %}{{ solicitation.due_date }}{% endif %}</div>
+                    <div class="h5 mb-0 text-dark pt-1">{% if solicitation.due_date %}{{ solicitation.due_date.split('
+                        ')[0] }}{% else %}TBD{% endif %}</div>
                 </div>
             </div>
         </div>
@@ -133,9 +132,8 @@
                         <dd class="col-sm-9">{{ solicitation.rfx_status }}</dd>
 
                         <dt class="col-sm-3 text-muted">Due Date</dt>
-                        <dd class="col-sm-9">{% if solicitation.due_date and solicitation.due_date|length >= 10 %}{{
-                            solicitation.due_date[5:7] }}/{{ solicitation.due_date[8:10] }}/{{ solicitation.due_date[:4]
-                            }}{% else %}{{ solicitation.due_date }}{% endif %}</dd>
+                        <dd class="col-sm-9">{% if solicitation.due_date %}{{ solicitation.due_date.split(' ')[0] }}{%
+                            else %}TBD{% endif %}</dd>
 
                         <dt class="col-sm-3 text-muted">Industry</dt>
                         <dd class="col-sm-9">{{ solicitation.industry }}</dd>
@@ -334,7 +332,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         $('[data-toggle="tooltip"]').tooltip();
-        
+
         // Fix ScrollSpy
         $('body').scrollspy({ target: '#profile-scroll-spy', offset: 100 });
 
