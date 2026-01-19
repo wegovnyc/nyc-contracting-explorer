@@ -98,6 +98,19 @@ def load_crol(conn):
             pin = row.get('PIN', '').strip()
             if not pin:
                 continue
+            
+            # Skip invalid PINs (text like "SEE BELOW", "NoPINFound", etc.)
+            # Valid PINs should be alphanumeric and at least 8 characters
+            if len(pin) < 8:
+                continue
+            if pin.upper() in ('NOPINFOUND', 'SEE BELOW', 'LINE 17 BELOW', 'SEE LINE 17 BELOW', 'LINE 17'):
+                continue
+            # Skip PINs that are all zeros or mostly zeros
+            if pin.replace('0', '').replace('.', '') == '':
+                continue
+            # Skip PINs that start with common invalid patterns
+            if pin.lower().startswith('see ') or pin.lower().startswith('line '):
+                continue
                 
             to_db.append((
                 row.get('RequestID'),
