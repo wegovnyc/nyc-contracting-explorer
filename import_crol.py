@@ -94,6 +94,11 @@ def load_crol(conn):
         count = 0
         
         for row in reader:
+            # Skip records without PIN - we can't match them to solicitations/contracts
+            pin = row.get('PIN', '').strip()
+            if not pin:
+                continue
+                
             to_db.append((
                 row.get('RequestID'),
                 row.get('StartDate'),
