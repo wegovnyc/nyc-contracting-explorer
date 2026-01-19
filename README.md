@@ -83,6 +83,39 @@ Restart Claude Desktop, then ask questions like:
 | `get_spending_by_year` | Checkbook NYC spending by fiscal year |
 | `get_vendor_spending` | Spending history for specific vendor |
 
+## Public Data Access
+
+The spending data is available in a public S3 bucket for direct analysis:
+
+**Bucket:** `s3://nyc-databook-spending`
+
+### Access Methods
+
+1. **AWS CLI (no credentials needed):**
+   ```bash
+   aws s3 ls s3://nyc-databook-spending/ --no-sign-request
+   aws s3 cp s3://nyc-databook-spending/fiscal_year=2024/chunk_0001.parquet . --no-sign-request
+   ```
+
+2. **Direct HTTPS:**
+   ```
+   https://nyc-databook-spending.s3.amazonaws.com/fiscal_year=2024/chunk_0001.parquet
+   ```
+
+3. **DuckDB (for analysis):**
+   ```sql
+   INSTALL httpfs; LOAD httpfs;
+   SELECT * FROM 's3://nyc-databook-spending/fiscal_year=2024/*.parquet' LIMIT 10;
+   ```
+
+### Data Structure
+| Path | Contents |
+|------|----------|
+| `fiscal_year=YYYY/` | Spending transactions (Parquet, chunked) |
+| `contracts/fiscal_year=YYYY/` | Contract data (Parquet) |
+
+Data spans FY2010-FY2026 with 147M+ spending transactions.
+
 ## Data Sources
 
 - **PASSPort (MOCS)** - Vendor registrations, contracts, solicitations
