@@ -202,6 +202,54 @@ def init_db(conn):
         )
     """)
     
+    # 12. City Record Online (CROL)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS crol (
+        RequestID TEXT PRIMARY KEY,
+        StartDate TEXT,
+        EndDate TEXT,
+        AgencyName TEXT,
+        TypeOfNoticeDescription TEXT,
+        CategoryDescription TEXT,
+        ShortTitle TEXT,
+        SelectionMethodDescription TEXT,
+        SectionName TEXT,
+        SpecialCaseReasonDescription TEXT,
+        PIN TEXT,
+        DueDate TEXT,
+        AddressToRequest TEXT,
+        ContactName TEXT,
+        ContactPhone TEXT,
+        Email TEXT,
+        ContractAmount TEXT,
+        ContactFax TEXT,
+        AdditionalDescription1 TEXT,
+        AdditionalDescription2 TEXT,
+        AdditionalDescription3 TEXT,
+        OtherInfo1 TEXT,
+        OtherInfo2 TEXT,
+        OtherInfo3 TEXT,
+        VendorName TEXT,
+        VendorAddress TEXT,
+        Printout1 TEXT,
+        Printout2 TEXT,
+        Printout3 TEXT,
+        DocumentLinks TEXT,
+        EventDate TEXT,
+        EventBuildingName TEXT,
+        EventStreetAddress1 TEXT,
+        EventStreetAddress2 TEXT,
+        EventCity TEXT,
+        EventStateCode TEXT,
+        EventZipCode TEXT,
+        wegov_org_name TEXT,
+        wegov_org_id TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_crol_pin ON crol(PIN)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_crol_agency ON crol(AgencyName)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_crol_vendor ON crol(VendorName)")
+    
     conn.commit()
 
 def normalize_contract_id(cid):
@@ -494,6 +542,75 @@ def match_entities_to_vendors(conn):
     cursor.executemany("UPDATE mocs_entities SET matched_vendor_id = ?, match_score = ? WHERE rowid = ?", updates)
     conn.commit()
 
+def load_crol(conn):
+    """Load City Record Online (CROL) data from CSV."""
+    if not os.path.exists("crol_data.csv"):
+        print("CROL data file not found, skipping...")
+        return
+        
+    print("Loading CROL data...")
+    cursor = conn.cursor()
+    
+    with open("crol_data.csv", 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        to_db = []
+        count = 0
+        
+        for row in reader:
+            to_db.append((
+                row.get('RequestID'),
+                row.get('StartDate'),
+                row.get('EndDate'),
+                row.get('AgencyName'),
+                row.get('TypeOfNoticeDescription'),
+                row.get('CategoryDescription'),
+                row.get('ShortTitle'),
+                row.get('SelectionMethodDescription'),
+                row.get('SectionName'),
+                row.get('SpecialCaseReasonDescription'),
+                row.get('PIN'),
+                row.get('DueDate'),
+                row.get('AddressToRequest'),
+                row.get('ContactName'),
+                row.get('ContactPhone'),
+                row.get('Email'),
+                row.get('ContractAmount'),
+                row.get('ContactFax'),
+                row.get('AdditionalDescription1'),
+                row.get('AdditionalDesctription2'),  # Note: typo in source data
+                row.get('AdditionalDescription3'),
+                row.get('OtherInfo1'),
+                row.get('OtherInfo2'),
+                row.get('OtherInfo3'),
+                row.get('VendorName'),
+                row.get('VendorAddress'),
+                row.get('Printout1'),
+                row.get('Printout2'),
+                row.get('Printout3'),
+                row.get('DocumentLinks'),
+                row.get('EventDate'),
+                row.get('EventBuildingName'),
+                row.get('EventStreetAddress1'),
+                row.get('EventStreetAddress2'),
+                row.get('EventCity'),
+                row.get('EventStateCode'),
+                row.get('EventZipCode'),
+                row.get('wegov-org-name'),
+                row.get('wegov-org-id')
+            ))
+            
+            count += 1
+            if count % 100000 == 0:
+                print(f"  Processed {count:,} CROL records...")
+                
+        cursor.executemany("""
+        INSERT OR IGNORE INTO crol VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, to_db)
+        conn.commit()
+        
+    print(f"Loaded {len(to_db):,} CROL records.")
+
+
 def create_indices(conn):
     print("Creating indices...")
     cursor = conn.cursor()
@@ -519,6 +636,7 @@ if __name__ == "__main__":
     load_contracts(conn)
     load_doing_business(conn)
     load_new_vendor_data(conn)
+    load_crol(conn)
     match_entities_to_vendors(conn)
     
     create_indices(conn)
