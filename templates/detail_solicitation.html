@@ -84,8 +84,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="small text-muted text-uppercase font-weight-bold">Due Date</div>
-                    <div class="h5 mb-0 text-dark pt-1">{% if solicitation.due_date %}{{ solicitation.due_date|replace('
-                        12:00:00 AM', '')|replace(' 12:00:00 PM', '') }}{% else %}TBD{% endif %}</div>
+                    <div class="h5 mb-0 text-dark pt-1">{% if solicitation.due_date %}{{ solicitation.due_date|replace(' 12:00:00 AM', '')|replace(' 12:00:00 PM', '') }}{% else %}TBD{% endif %}</div>
                 </div>
             </div>
         </div>
@@ -132,8 +131,7 @@
                         <dd class="col-sm-9">{{ solicitation.rfx_status }}</dd>
 
                         <dt class="col-sm-3 text-muted">Due Date</dt>
-                        <dd class="col-sm-9">{% if solicitation.due_date %}{{ solicitation.due_date|replace(' 12:00:00
-                            AM', '')|replace(' 12:00:00 PM', '')|replace(' 00:00:00', '') }}{% else %}TBD{% endif %}
+                        <dd class="col-sm-9">{% if solicitation.due_date %}{{ solicitation.due_date|replace(' 12:00:00 AM', '')|replace(' 12:00:00 PM', '') }}{% else %}TBD{% endif %}</dd>
                         </dd>
 
                         <dt class="col-sm-3 text-muted">Industry</dt>
