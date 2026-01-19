@@ -23,7 +23,7 @@
         </div>
 
         <!-- Method Filter -->
-        <div class="col-md-3 mb-3 mb-md-0">
+        <div class="col-md-2 mb-3 mb-md-0">
             <label class="small font-weight-bold text-muted">Method</label>
             <select name="method" class="custom-select">
                 <option value="">All Methods</option>
@@ -44,7 +44,12 @@
             </select>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-md-3">
+            <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="connectedContracts" name="connected"
+                    value="contracts" {% if connected_filter=='contracts' %}checked{% endif %}>
+                <label class="custom-control-label small" for="connectedContracts">Connected to Contracts</label>
+            </div>
             <button type="submit" class="btn btn-primary btn-block">Filter</button>
         </div>
     </form>
@@ -85,12 +90,12 @@
         <ul class="pagination pagination-sm justify-content-center">
             {% if page > 1 %}
             <li class="page-item"><a class="page-link"
-                    href="{{ url_for('solicitations', page=page-1, q=search_query, status=status_filter, method=method_filter, industry=industry_filter) }}">Previous</a>
+                    href="{{ url_for('solicitations', page=page-1, q=search_query, status=status_filter, method=method_filter, industry=industry_filter, connected=connected_filter) }}">Previous</a>
             </li>
             {% endif %}
             <li class="page-item disabled"><a class="page-link" href="#">Page {{ page }} of {{ pages }}</a></li>
             {% if page < pages %} <li class="page-item"><a class="page-link"
-                    href="{{ url_for('solicitations', page=page+1, q=search_query, status=status_filter, method=method_filter, industry=industry_filter) }}">Next</a>
+                    href="{{ url_for('solicitations', page=page+1, q=search_query, status=status_filter, method=method_filter, industry=industry_filter, connected=connected_filter) }}">Next</a>
                 </li>
                 {% endif %}
         </ul>

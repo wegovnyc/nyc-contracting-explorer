@@ -1194,6 +1194,7 @@ def contracts():
     status_filter = request.args.get('status')
     method_filter = request.args.get('method')
     industry_filter = request.args.get('industry')
+    connected_filter = request.args.get('connected')  # 'solicitations' to filter
     offset = (page - 1) * 50
     
     where_clauses = []
@@ -1214,6 +1215,10 @@ def contracts():
     if industry_filter:
         where_clauses.append("industry = ?")
         params.append(industry_filter)
+    
+    # Connected to Solicitations filter
+    if connected_filter == 'solicitations':
+        where_clauses.append("normalized_epin IN (SELECT DISTINCT normalized_epin FROM solicitations WHERE normalized_epin IS NOT NULL)")
         
     where_str = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         
@@ -1240,6 +1245,7 @@ def contracts():
     return render_template('list_contracts.html', rows=rows, page=page, pages=pages, count=count, 
                            search_query=search_query, 
                            status_filter=status_filter, method_filter=method_filter, industry_filter=industry_filter,
+                           connected_filter=connected_filter,
                            statuses=statuses, methods=methods, industries=industries)
 
 @app.route('/transactions')
@@ -1538,6 +1544,7 @@ def solicitations():
     status_filter = request.args.get('status')
     method_filter = request.args.get('method')
     industry_filter = request.args.get('industry')
+    connected_filter = request.args.get('connected')  # 'contracts' to filter
     offset = (page - 1) * 50
     
     where_clauses = []
@@ -1558,6 +1565,10 @@ def solicitations():
     if industry_filter:
         where_clauses.append("industry = ?")
         params.append(industry_filter)
+    
+    # Connected to Contracts filter
+    if connected_filter == 'contracts':
+        where_clauses.append("normalized_epin IN (SELECT DISTINCT normalized_epin FROM contracts WHERE normalized_epin IS NOT NULL)")
         
     where_str = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         
@@ -1587,6 +1598,7 @@ def solicitations():
     return render_template('list_solicitations.html', rows=rows, page=page, pages=pages, count=count, 
                            search_query=search_query, 
                            status_filter=status_filter, method_filter=method_filter, industry_filter=industry_filter,
+                           connected_filter=connected_filter,
                            statuses=statuses, methods=methods, industries=industries)
 
 @app.route('/solicitation/<id>')
